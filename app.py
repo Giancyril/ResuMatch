@@ -137,7 +137,7 @@ st.markdown("""
 # App Header
 st.markdown("""
 <div class="title-container">
-    <h1 class="main-title">Hermes Job Matcher</h1>
+    <h1 class="main-title">ResuMatch</h1>
     <p class="subtitle">Tailor your resume, identify missing technical keyword gaps, and generate high-impact bullet points utilizing Google Gemini.</p>
 </div>
 """, unsafe_allow_html=True)

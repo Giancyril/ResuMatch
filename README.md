@@ -1,4 +1,4 @@
-# Hermes Job Matcher (AI Resume & Job Match Analyzer)
+# ResuMatch (AI Resume & Job Match Analyzer)
 
 A production-grade, AI-augmented resume tailoring and applicant tracking system (ATS) optimization engine built on top of Python, Streamlit, and Google Gemini. Features intelligent keyword gap analysis, structural match scoring, and automated resume bullet point transformation.
 
