@@ -195,7 +195,7 @@ st.markdown("""
         margin: 0 auto 2rem;
         line-height: 1.7;
         font-weight: 400;
-        text-align: center;
+        text-align: center !important;
     }
     .letterhead-divider {
         border: none;
