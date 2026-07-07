@@ -311,10 +311,32 @@ col1, col2 = st.columns(2)
 with col1:
     with st.container(border=True):
         st.markdown('<span class="exhibit-label">Exhibit A — Resume</span>', unsafe_allow_html=True)
+        
+        # File uploader option for resume
+        uploaded_resume = st.file_uploader(
+            "Upload Resume (PDF or TXT)",
+            type=["pdf", "txt"],
+            key="resume_uploader",
+            label_visibility="visible"
+        )
+        
+        resume_default = ""
+        if uploaded_resume is not None:
+            try:
+                file_bytes = uploaded_resume.read()
+                if uploaded_resume.name.endswith(".pdf"):
+                    from utils import extract_text_from_pdf
+                    resume_default = extract_text_from_pdf(file_bytes)
+                else:
+                    resume_default = file_bytes.decode("utf-8", errors="ignore")
+            except Exception as ex:
+                st.error(f"Error loading resume file: {ex}")
+        
         resume_input = st.text_area(
-            "Resume",
-            height=320,
-            placeholder="John Doe\nSoftware Engineer\n\n— Built API endpoints using Node.js\n— Developed frontend components in React",
+            "Resume Plain Text",
+            value=resume_default,
+            height=260,
+            placeholder="Or paste your resume text here...",
             label_visibility="collapsed"
         )
 
