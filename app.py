@@ -111,11 +111,17 @@ st.markdown("""
 
     /* Style the Text Area Wrapper and Inner Input */
     div[data-baseweb="textarea"] {
+        border: none !important;
+        background: transparent !important;
+    }
+    div[data-baseweb="textarea"] > div {
         background-color: var(--surface) !important;
         border: 1px solid var(--rule) !important;
-        border-radius: 2px !important;
+        border-radius: 4px !important;
+        transition: all 0.15s ease-in-out !important;
     }
-    div[data-baseweb="textarea"]:focus-within {
+    div[data-baseweb="textarea"]:focus-within > div,
+    div[data-baseweb="textarea"] > div:focus-within {
         border-color: var(--accent) !important;
         box-shadow: 0 0 0 1px var(--accent) !important;
     }
