@@ -1,287 +1,398 @@
 import streamlit as st
-import json
 from gemini_service import analyze_match
 
 # Page Configuration
 st.set_page_config(
-    page_title="AI Resume & Job Match Analyzer",
-    page_icon="💼",
+    page_title="ResuMatch — Resume Review Report",
+    page_icon="📄",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Custom Premium Styling
+# ---------------------------------------------------------------------------
+# Design system: "Document Review Report"
+# A resume and job description are treated as exhibits in a formal review.
+# Missing keywords are flagged like proofreader's marks; rewritten bullets
+# are shown as track-changes diffs; the match score is an ink stamp verdict.
+# ---------------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* Hide Streamlit Header & Footer */
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --paper: #F7F4EE;
+        --surface: #FFFFFF;
+        --ink: #201E1B;
+        --ink-muted: #6B6459;
+        --rule: #DED7C9;
+        --accent: #1F4D3A;
+        --accent-soft: rgba(31, 77, 58, 0.08);
+        --flag: #A13327;
+        --flag-soft: rgba(161, 51, 39, 0.07);
+        --amber: #9C6B14;
+        --amber-soft: rgba(156, 107, 20, 0.08);
+    }
+
     header {visibility: hidden;}
     footer {visibility: hidden;}
     #MainMenu {visibility: hidden;}
-    
-    /* Gradient Background and Theme Override */
+
     .stApp {
-        background-color: #0a0b10 !important;
-        background-image: 
-            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0, transparent 50%),
-            radial-gradient(at 50% 0%, rgba(168, 85, 247, 0.03) 0, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.05) 0, transparent 50%) !important;
-        color: #94a3b8;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #0a0b10;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #1e293b;
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #334155;
+        background-color: var(--paper) !important;
+        color: var(--ink);
+        font-family: 'IBM Plex Sans', -apple-system, sans-serif;
     }
 
-    /* Title Styling */
-    .title-container {
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--paper); }
+    ::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+    /* ---------------- Letterhead ---------------- */
+    .letterhead {
         text-align: center;
-        padding: 3rem 0 2rem 0;
+        padding: 2.75rem 0 1.5rem 0;
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: 2.5rem;
     }
-    .main-title {
-        font-size: 3.5rem;
-        font-weight: 800;
-        letter-spacing: -0.05em;
-        background: linear-gradient(135deg, #a855f7 10%, #6366f1 50%, #ec4899 90%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.75rem;
+    .eyebrow {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        margin-bottom: 0.9rem;
     }
-    .subtitle {
+    .masthead {
+        font-family: 'Fraunces', serif;
+        font-size: 3.1rem;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+        margin-bottom: 0.6rem;
+    }
+    .masthead em {
+        color: var(--accent);
+        font-style: italic;
+        font-weight: 500;
+    }
+    .deck {
+        font-family: 'Fraunces', serif;
+        font-style: italic;
         font-size: 1.05rem;
-        color: #64748b;
-        font-weight: 400;
-        max-width: 650px;
+        color: var(--ink-muted);
+        max-width: 560px;
         margin: 0 auto;
-        line-height: 1.6;
+        line-height: 1.65;
+        font-weight: 500;
     }
-    
-    /* Custom Input Fields (Textarea Styling) */
+
+    /* ---------------- Exhibit cards (inputs) ---------------- */
+    .exhibit-label {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        margin-bottom: 0.6rem;
+        display: block;
+    }
+
+    /* Change the red container border to none */
+    div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="stVerticalBlockBorderWrapper"] > div {
+        border: none !important;
+        background-color: var(--surface) !important;
+        border-radius: 2px !important;
+        box-shadow: 0 1px 0 var(--rule), 0 8px 24px -18px rgba(32, 30, 27, 0.35) !important;
+    }
+
+    /* Style the Text Area Wrapper and Inner Input */
     div[data-baseweb="textarea"] {
-        background-color: #0e0f17 !important;
-        border: 1px solid rgba(255, 255, 255, 0.03) !important;
-        border-radius: 16px !important;
-        color: #e2e8f0 !important;
-        transition: all 0.25s ease-in-out !important;
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+        background-color: var(--surface) !important;
+        border: 1px solid var(--rule) !important;
+        border-radius: 2px !important;
     }
     div[data-baseweb="textarea"]:focus-within {
-        border-color: rgba(99, 102, 241, 0.4) !important;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 1px var(--accent) !important;
     }
     textarea {
-        color: #f1f5f9 !important;
+        background-color: var(--surface) !important;
+        color: #000000 !important;
+        font-family: 'IBM Plex Mono', monospace !important;
         font-size: 0.85rem !important;
+        line-height: 1.6 !important;
     }
-    
-    /* Custom Card Design */
-    .premium-card {
-        background-color: #0e0f17 !important;
-        border: 1px solid rgba(255, 255, 255, 0.03) !important;
-        border-radius: 16px !important;
-        padding: 1.5rem !important;
-        box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.7) !important;
-        margin-bottom: 1.5rem !important;
-    }
-    
-    /* Missing Skill Pills */
-    .skill-badge {
-        display: inline-flex;
-        align-items: center;
-        background: rgba(244, 63, 94, 0.05) !important;
-        border: 1px solid rgba(244, 63, 94, 0.15) !important;
-        color: #fda4af !important;
-        border-radius: 6px !important;
-        padding: 4px 10px !important;
-        font-size: 0.75rem !important;
-        margin: 4px !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.02em;
-        transition: all 0.2s ease;
-    }
-    .skill-badge:hover {
-        background: rgba(244, 63, 94, 0.1) !important;
-        border-color: rgba(244, 63, 94, 0.3) !important;
-    }
-    
-    /* Score display elements */
-    .score-circle {
-        font-size: 4.5rem;
-        font-weight: 900;
-        background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        line-height: 1;
-        margin-top: 0.5rem;
-    }
-    .score-label {
-        font-size: 0.75rem;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.15em;
-        font-weight: 800;
-        text-align: center;
-    }
-    
-    /* Bullet list tables */
-    .bullet-row {
-        border: 1px solid rgba(255, 255, 255, 0.02) !important;
-        background: rgba(255, 255, 255, 0.005) !important;
-        border-radius: 12px !important;
-        padding: 1.25rem;
-        margin-bottom: 1.25rem;
-    }
-    .bullet-header {
-        font-size: 0.7rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 0.25rem;
-    }
-    .bullet-orig-header { color: #f43f5e; }
-    .bullet-new-header { color: #10b981; }
-    
-    /* Style default Streamlit buttons */
+    textarea::placeholder { color: #B7AF9F !important; }
+
+    /* ---------------- Button ---------------- */
     div.stButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
-        color: white !important;
+        background: var(--accent) !important;
+        color: var(--paper) !important;
         border: none !important;
-        border-radius: 10px !important;
-        padding: 0.75rem 2rem !important;
-        font-weight: 700 !important;
-        font-size: 0.85rem !important;
-        letter-spacing: 0.02em;
-        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.25) !important;
-        transition: all 0.2s ease-in-out !important;
-        width: 100%;
+        border-radius: 2px !important;
+        padding: 0.8rem 2rem !important;
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-weight: 600 !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
+        transition: background 0.15s ease-in-out !important;
+        width: 100%;
     }
     div.stButton > button:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4) !important;
+        background: #163A2B !important;
+    }
+
+    /* ---------------- Report section headers ---------------- */
+    .report-heading {
+        text-align: center;
+        margin: 1rem 0 2rem 0;
+    }
+    .report-kicker {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+    }
+    .report-title {
+        font-family: 'Fraunces', serif;
+        font-size: 1.9rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-top: 0.4rem;
+    }
+    .section-number {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    /* ---------------- Ink stamp (score) ---------------- */
+    .stamp-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 1rem 0;
+    }
+    .stamp {
+        width: 168px;
+        height: 168px;
+        border-radius: 50%;
+        border: 3px double var(--stamp-color, var(--accent));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(-7deg);
+        color: var(--stamp-color, var(--accent));
+        font-family: 'IBM Plex Mono', monospace;
+    }
+    .stamp-score {
+        font-size: 2.6rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+    .stamp-verdict {
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-top: 0.35rem;
+        text-align: center;
+        padding: 0 0.5rem;
+    }
+
+    /* ---------------- Flagged terms ---------------- */
+    .flag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.1rem;
+        margin-top: 0.5rem;
+    }
+    .flag-term {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--flag);
+        border-bottom: 1px dashed var(--flag);
+        padding-bottom: 1px;
+    }
+    .flag-term::before { content: "▸ "; }
+
+    /* ---------------- Diff rows (bullet revisions) ---------------- */
+    .diff-block {
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        font-family: 'IBM Plex Mono', monospace;
+    }
+    .diff-line {
+        padding: 0.7rem 1rem;
+        font-size: 0.82rem;
+        line-height: 1.55;
+        border-left: 3px solid transparent;
+    }
+    .diff-remove {
+        background: var(--flag-soft);
+        border-left-color: var(--flag);
+        color: #7A241B;
+        text-decoration: line-through;
+        text-decoration-color: rgba(161, 51, 39, 0.45);
+    }
+    .diff-add {
+        background: var(--accent-soft);
+        border-left-color: var(--accent);
+        color: var(--accent);
+        font-weight: 500;
+    }
+    .diff-impact {
+        padding: 0.55rem 1rem;
+        font-size: 0.72rem;
+        color: var(--ink-muted);
+        background: var(--surface);
+        border-top: 1px dashed var(--rule);
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
+    .diff-impact b { color: var(--ink); font-weight: 600; }
+
+    div[data-testid="stDownloadButton"] > button {
+        background: var(--surface) !important;
+        color: var(--accent) !important;
+        border: 1px solid var(--accent) !important;
+        border-radius: 2px !important;
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 600 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# App Header
+# ---------------- Letterhead ----------------
 st.markdown("""
-<div class="title-container">
-    <h1 class="main-title">ResuMatch</h1>
-    <p class="subtitle">Tailor your resume, identify missing technical keyword gaps, and generate high-impact bullet points utilizing Google Gemini.</p>
+<div class="letterhead">
+    <div class="eyebrow">Document Review Report</div>
+    <div class="masthead">Resu<em>Match</em></div>
+    <div class="deck">Submit your resume and a target role as exhibits. Gemini reviews the pairing and returns a scored alignment report with flagged gaps and recommended revisions.</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Input Columns
+# ---------------- Exhibits (inputs) ----------------
 col1, col2 = st.columns(2)
 
 with col1:
     with st.container(border=True):
-        st.subheader("📝 Paste Your Resume")
+        st.markdown('<span class="exhibit-label">Exhibit A — Resume</span>', unsafe_allow_html=True)
         resume_input = st.text_area(
-            "Paste the raw text of your current resume here:",
+            "Resume",
             height=320,
-            placeholder="John Doe\nSoftware Engineer...\n- Built API endpoints using Node.js...\n- Developed frontend components...",
+            placeholder="John Doe\nSoftware Engineer\n\n— Built API endpoints using Node.js\n— Developed frontend components in React",
             label_visibility="collapsed"
         )
 
 with col2:
     with st.container(border=True):
-        st.subheader("🎯 Paste Job Description")
+        st.markdown('<span class="exhibit-label">Exhibit B — Target Role</span>', unsafe_allow_html=True)
         jd_input = st.text_area(
-            "Paste the target job description here:",
+            "Job Description",
             height=320,
-            placeholder="Requirements:\n- 3+ years experience with React & Python\n- Solid understanding of SQL and CI/CD pipelines\n- Experience building scalable cloud apps...",
+            placeholder="Requirements:\n— 3+ years experience with React & Python\n— Solid understanding of SQL and CI/CD\n— Experience building scalable cloud applications",
             label_visibility="collapsed"
         )
 
-# Action Row
-st.markdown("<div style='max-width: 300px; margin: 1rem auto;'>", unsafe_allow_html=True)
-analyze_clicked = st.button("🚀 Analyze Alignment")
+st.markdown("<div style='max-width: 260px; margin: 1.75rem auto 0.5rem auto;'>", unsafe_allow_html=True)
+analyze_clicked = st.button("Review Alignment")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Processing Analysis
+# ---------------- Analysis ----------------
 if analyze_clicked:
     if not resume_input.strip() or not jd_input.strip():
-        st.warning("⚠️ Please provide both your resume and the job description to run the alignment analysis.")
+        st.warning("Both exhibits are required before a review can be filed. Paste your resume and the job description above.")
     else:
-        with st.spinner("⚡ Gemini is analyzing keyword densities and crafting custom resume modifications..."):
+        with st.spinner("Filing exhibits and cross-referencing keyword density…"):
             try:
-                # Call Gemini Service
                 analysis = analyze_match(resume_input, jd_input)
-                
-                # Results Section
-                st.markdown("---")
-                st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>📊 Analysis Alignment Report</h2>", unsafe_allow_html=True)
-                
+                score = int(analysis.get("match_score", 0))
+                missing_keywords = analysis.get("missing_keywords", [])
+                rewritten_bullets = analysis.get("rewritten_bullets", [])
+
+                if score >= 80:
+                    stamp_color, verdict = "#1F4D3A", "Strong Match"
+                elif score >= 50:
+                    stamp_color, verdict = "#9C6B14", "Partial Match"
+                else:
+                    stamp_color, verdict = "#A13327", "Needs Revision"
+
+                st.markdown("""
+                <div class="report-heading">
+                    <div class="report-kicker">Findings</div>
+                    <div class="report-title">Alignment Report</div>
+                </div>
+                """, unsafe_allow_html=True)
+
                 res_col1, res_col2 = st.columns([1, 2])
-                
+
                 with res_col1:
                     with st.container(border=True):
-                        st.markdown('<div class="score-label">ATS Compatibility</div>', unsafe_allow_html=True)
-                        score = int(analysis.get("match_score", 0))
-                        st.markdown(f'<div class="score-circle">{score}%</div>', unsafe_allow_html=True)
-                        st.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
-                        st.progress(score / 100.0)
-                    
-                with res_col2:
-                    with st.container(border=True):
-                        st.subheader("❌ Missing Keywords & Skills")
-                        st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;'>Add these skills to your resume to pass automated ATS filters:</p>", unsafe_allow_html=True)
-                        
-                        missing_keywords = analysis.get("missing_keywords", [])
-                        if missing_keywords:
-                            pills_html = "".join([f'<span class="skill-badge">{kw}</span>' for kw in missing_keywords])
-                            st.markdown(f'<div>{pills_html}</div>', unsafe_allow_html=True)
-                        else:
-                            st.success("🎉 Amazing! No major missing skills identified against the job description requirements.")
-                
-                # Tailored Bullet Points Section
-                st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-                with st.container(border=True):
-                    st.subheader("💡 Tailored Bullet Point Upgrades")
-                    st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem;'>Replace generic resume claims with these action-oriented, metrics-driven bullets tailored to this role's keywords:</p>", unsafe_allow_html=True)
-                    
-                    rewritten_bullets = analysis.get("rewritten_bullets", [])
-                    for idx, bullet in enumerate(rewritten_bullets):
-                        orig = bullet.get("original", "")
-                        rewritten = bullet.get("rewritten", "")
-                        impact = bullet.get("impact", "")
-                        
+                        st.markdown('<div class="section-number">01 — Alignment Score</div>', unsafe_allow_html=True)
                         st.markdown(f"""
-                        <div class="bullet-row">
-                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-                                <div>
-                                    <span class="bullet-header bullet-orig-header">🔴 ORIGINAL:</span>
-                                    <p style="font-size: 0.85rem; color: #cbd5e1; font-style: italic; margin-top: 2px;">"{orig}"</p>
-                                </div>
-                                <div style="margin-top: 8px;">
-                                    <span class="bullet-header bullet-new-header">🟢 UPGRADED:</span>
-                                    <p style="font-size: 0.9rem; color: #ffffff; font-weight: 600; margin-top: 2px;">"{rewritten}"</p>
-                                </div>
-                                <div style="margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 6px;">
-                                    <span style="font-size: 0.75rem; font-weight: 700; color: #818cf8; text-transform: uppercase;">ATS Impact:</span>
-                                    <span style="font-size: 0.8rem; color: #94a3b8;">{impact}</span>
-                                </div>
+                        <div class="stamp-wrap">
+                            <div class="stamp" style="--stamp-color: {stamp_color};">
+                                <div class="stamp-score">{score}%</div>
+                                <div class="stamp-verdict">{verdict}</div>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                
-                # Report Exporter
+
+                with res_col2:
+                    with st.container(border=True):
+                        st.markdown('<div class="section-number">02 — Flagged Terms</div>', unsafe_allow_html=True)
+                        if missing_keywords:
+                            st.markdown(
+                                "<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 0.75rem;'>Present in the target role, absent from the resume:</p>",
+                                unsafe_allow_html=True
+                            )
+                            pills_html = "".join([f'<span class="flag-term">{kw}</span>' for kw in missing_keywords])
+                            st.markdown(f'<div class="flag-list">{pills_html}</div>', unsafe_allow_html=True)
+                        else:
+                            st.markdown(
+                                "<p style='font-size: 0.85rem; color: var(--accent); font-weight: 500;'>No material gaps found against the target role's requirements.</p>",
+                                unsafe_allow_html=True
+                            )
+
                 st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
-                report_content = f"RESUME & JOB DESCRIPTION MATCH REPORT\n"
-                report_content += f"ATS Score: {score}%\n\n"
+                with st.container(border=True):
+                    st.markdown('<div class="section-number">03 — Recommended Revisions</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        "<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.25rem;'>Tracked changes, original struck through and replaced:</p>",
+                        unsafe_allow_html=True
+                    )
+                    for bullet in rewritten_bullets:
+                        orig = bullet.get("original", "")
+                        rewritten = bullet.get("rewritten", "")
+                        impact = bullet.get("impact", "")
+                        st.markdown(f"""
+                        <div class="diff-block">
+                            <div class="diff-line diff-remove">− {orig}</div>
+                            <div class="diff-line diff-add">+ {rewritten}</div>
+                            <div class="diff-impact"><b>Why:</b> {impact}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                report_content = "RESUME & JOB DESCRIPTION MATCH REPORT\n"
+                report_content += f"ATS Score: {score}% ({verdict})\n\n"
                 report_content += "MISSING KEYWORDS:\n"
                 report_content += ", ".join(missing_keywords) + "\n\n"
                 report_content += "REWRITTEN BULLETS:\n"
@@ -289,13 +400,14 @@ if analyze_clicked:
                     report_content += f"{idx+1}. Original: {bullet.get('original')}\n"
                     report_content += f"   Upgraded: {bullet.get('rewritten')}\n"
                     report_content += f"   Impact: {bullet.get('impact')}\n\n"
-                    
+
+                st.markdown("<div style='margin-top: 1.25rem;'></div>", unsafe_allow_html=True)
                 st.download_button(
-                    label="📥 Download Match Report (.txt)",
+                    label="Download Report (.txt)",
                     data=report_content,
                     file_name="job_alignment_report.txt",
                     mime="text/plain"
                 )
-                
+
             except Exception as ex:
-                st.error(f"❌ Failed to complete match analysis. Error details: {ex}")
+                st.error(f"Review could not be filed. Error details: {ex}")
