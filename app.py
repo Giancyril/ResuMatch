@@ -187,26 +187,24 @@ st.markdown("""
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
-    st.subheader("📝 Paste Your Resume")
-    resume_input = st.text_area(
-        "Paste the raw text of your current resume here:",
-        height=320,
-        placeholder="John Doe\nSoftware Engineer...\n- Built API endpoints using Node.js...\n- Developed frontend components...",
-        label_visibility="collapsed"
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container(border=True):
+        st.subheader("📝 Paste Your Resume")
+        resume_input = st.text_area(
+            "Paste the raw text of your current resume here:",
+            height=320,
+            placeholder="John Doe\nSoftware Engineer...\n- Built API endpoints using Node.js...\n- Developed frontend components...",
+            label_visibility="collapsed"
+        )
 
 with col2:
-    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
-    st.subheader("🎯 Paste Job Description")
-    jd_input = st.text_area(
-        "Paste the target job description here:",
-        height=320,
-        placeholder="Requirements:\n- 3+ years experience with React & Python\n- Solid understanding of SQL and CI/CD pipelines\n- Experience building scalable cloud apps...",
-        label_visibility="collapsed"
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container(border=True):
+        st.subheader("🎯 Paste Job Description")
+        jd_input = st.text_area(
+            "Paste the target job description here:",
+            height=320,
+            placeholder="Requirements:\n- 3+ years experience with React & Python\n- Solid understanding of SQL and CI/CD pipelines\n- Experience building scalable cloud apps...",
+            label_visibility="collapsed"
+        )
 
 # Action Row
 st.markdown("<div style='max-width: 300px; margin: 1rem auto;'>", unsafe_allow_html=True)
@@ -230,58 +228,55 @@ if analyze_clicked:
                 res_col1, res_col2 = st.columns([1, 2])
                 
                 with res_col1:
-                    st.markdown('<div class="premium-card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%;">', unsafe_allow_html=True)
-                    st.markdown('<div class="score-label">ATS Compatibility</div>', unsafe_allow_html=True)
-                    score = int(analysis.get("match_score", 0))
-                    st.markdown(f'<div class="score-circle">{score}%</div>', unsafe_allow_html=True)
-                    st.markdown('<div style="margin-top: 1rem;"></div>', unsafe_allow_html=True)
-                    st.progress(score / 100.0)
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    with st.container(border=True):
+                        st.markdown('<div class="score-label">ATS Compatibility</div>', unsafe_allow_html=True)
+                        score = int(analysis.get("match_score", 0))
+                        st.markdown(f'<div class="score-circle">{score}%</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
+                        st.progress(score / 100.0)
                     
                 with res_col2:
-                    st.markdown('<div class="premium-card" style="height: 100%;">', unsafe_allow_html=True)
-                    st.subheader("❌ Missing Keywords & Skills")
-                    st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;'>Add these skills to your resume to pass automated ATS filters:</p>", unsafe_allow_html=True)
-                    
-                    missing_keywords = analysis.get("missing_keywords", [])
-                    if missing_keywords:
-                        pills_html = "".join([f'<span class="skill-badge">{kw}</span>' for kw in missing_keywords])
-                        st.markdown(f'<div>{pills_html}</div>', unsafe_allow_html=True)
-                    else:
-                        st.success("🎉 Amazing! No major missing skills identified against the job description requirements.")
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    with st.container(border=True):
+                        st.subheader("❌ Missing Keywords & Skills")
+                        st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;'>Add these skills to your resume to pass automated ATS filters:</p>", unsafe_allow_html=True)
+                        
+                        missing_keywords = analysis.get("missing_keywords", [])
+                        if missing_keywords:
+                            pills_html = "".join([f'<span class="skill-badge">{kw}</span>' for kw in missing_keywords])
+                            st.markdown(f'<div>{pills_html}</div>', unsafe_allow_html=True)
+                        else:
+                            st.success("🎉 Amazing! No major missing skills identified against the job description requirements.")
                 
                 # Tailored Bullet Points Section
                 st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-                st.markdown('<div class="premium-card">', unsafe_allow_html=True)
-                st.subheader("💡 Tailored Bullet Point Upgrades")
-                st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem;'>Replace generic resume claims with these action-oriented, metrics-driven bullets tailored to this role's keywords:</p>", unsafe_allow_html=True)
-                
-                rewritten_bullets = analysis.get("rewritten_bullets", [])
-                for idx, bullet in enumerate(rewritten_bullets):
-                    orig = bullet.get("original", "")
-                    rewritten = bullet.get("rewritten", "")
-                    impact = bullet.get("impact", "")
+                with st.container(border=True):
+                    st.subheader("💡 Tailored Bullet Point Upgrades")
+                    st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem;'>Replace generic resume claims with these action-oriented, metrics-driven bullets tailored to this role's keywords:</p>", unsafe_allow_html=True)
                     
-                    st.markdown(f"""
-                    <div class="bullet-row">
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-                            <div>
-                                <span class="bullet-header bullet-orig-header">🔴 ORIGINAL:</span>
-                                <p style="font-size: 0.85rem; color: #cbd5e1; font-style: italic; margin-top: 2px;">"{orig}"</p>
-                            </div>
-                            <div style="margin-top: 8px;">
-                                <span class="bullet-header bullet-new-header">🟢 UPGRADED:</span>
-                                <p style="font-size: 0.9rem; color: #ffffff; font-weight: 600; margin-top: 2px;">"{rewritten}"</p>
-                            </div>
-                            <div style="margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 6px;">
-                                <span style="font-size: 0.75rem; font-weight: 700; color: #818cf8; text-transform: uppercase;">ATS Impact:</span>
-                                <span style="font-size: 0.8rem; color: #94a3b8;">{impact}</span>
+                    rewritten_bullets = analysis.get("rewritten_bullets", [])
+                    for idx, bullet in enumerate(rewritten_bullets):
+                        orig = bullet.get("original", "")
+                        rewritten = bullet.get("rewritten", "")
+                        impact = bullet.get("impact", "")
+                        
+                        st.markdown(f"""
+                        <div class="bullet-row">
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                                <div>
+                                    <span class="bullet-header bullet-orig-header">🔴 ORIGINAL:</span>
+                                    <p style="font-size: 0.85rem; color: #cbd5e1; font-style: italic; margin-top: 2px;">"{orig}"</p>
+                                </div>
+                                <div style="margin-top: 8px;">
+                                    <span class="bullet-header bullet-new-header">🟢 UPGRADED:</span>
+                                    <p style="font-size: 0.9rem; color: #ffffff; font-weight: 600; margin-top: 2px;">"{rewritten}"</p>
+                                </div>
+                                <div style="margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 6px;">
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: #818cf8; text-transform: uppercase;">ATS Impact:</span>
+                                    <span style="font-size: 0.8rem; color: #94a3b8;">{impact}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
                 
                 # Report Exporter
                 st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
