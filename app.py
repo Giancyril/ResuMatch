@@ -343,10 +343,32 @@ with col1:
 with col2:
     with st.container(border=True):
         st.markdown('<span class="exhibit-label">Exhibit B — Target Role</span>', unsafe_allow_html=True)
+        
+        # File uploader option for job description
+        uploaded_jd = st.file_uploader(
+            "Upload Job Description (PDF or TXT)",
+            type=["pdf", "txt"],
+            key="jd_uploader",
+            label_visibility="visible"
+        )
+        
+        jd_default = ""
+        if uploaded_jd is not None:
+            try:
+                file_bytes = uploaded_jd.read()
+                if uploaded_jd.name.endswith(".pdf"):
+                    from utils import extract_text_from_pdf
+                    jd_default = extract_text_from_pdf(file_bytes)
+                else:
+                    jd_default = file_bytes.decode("utf-8", errors="ignore")
+            except Exception as ex:
+                st.error(f"Error loading job description file: {ex}")
+        
         jd_input = st.text_area(
-            "Job Description",
-            height=320,
-            placeholder="Requirements:\n— 3+ years experience with React & Python\n— Solid understanding of SQL and CI/CD\n— Experience building scalable cloud applications",
+            "Job Description Plain Text",
+            value=jd_default,
+            height=260,
+            placeholder="Or paste the target job description here...",
             label_visibility="collapsed"
         )
 
