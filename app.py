@@ -13,70 +13,111 @@ st.set_page_config(
 # Custom Premium Styling
 st.markdown("""
 <style>
+    /* Hide Streamlit Header & Footer */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    
     /* Gradient Background and Theme Override */
     .stApp {
-        background: linear-gradient(135deg, #0d0e15 0%, #151624 100%);
-        color: #e2e8f0;
+        background-color: #0a0b10 !important;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0, transparent 50%),
+            radial-gradient(at 50% 0%, rgba(168, 85, 247, 0.03) 0, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.05) 0, transparent 50%) !important;
+        color: #94a3b8;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0a0b10;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
+    }
+
     /* Title Styling */
     .title-container {
         text-align: center;
-        padding: 2.5rem 0 1.5rem 0;
+        padding: 3rem 0 2rem 0;
     }
     .main-title {
-        font-size: 3rem;
+        font-size: 3.5rem;
         font-weight: 800;
         letter-spacing: -0.05em;
-        background: linear-gradient(to right, #6366f1, #a855f7, #ec4899);
+        background: linear-gradient(135deg, #a855f7 10%, #6366f1 50%, #ec4899 90%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
     }
     .subtitle {
-        font-size: 1.1rem;
-        color: #94a3b8;
+        font-size: 1.05rem;
+        color: #64748b;
         font-weight: 400;
-        max-width: 600px;
+        max-width: 650px;
         margin: 0 auto;
-        line-height: 1.5;
+        line-height: 1.6;
+    }
+    
+    /* Custom Input Fields (Textarea Styling) */
+    div[data-baseweb="textarea"] {
+        background-color: #0e0f17 !important;
+        border: 1px solid rgba(255, 255, 255, 0.03) !important;
+        border-radius: 16px !important;
+        color: #e2e8f0 !important;
+        transition: all 0.25s ease-in-out !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    }
+    div[data-baseweb="textarea"]:focus-within {
+        border-color: rgba(99, 102, 241, 0.4) !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    }
+    textarea {
+        color: #f1f5f9 !important;
+        font-size: 0.85rem !important;
     }
     
     /* Custom Card Design */
     .premium-card {
-        background: rgba(22, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 18px;
-        padding: 1.75rem;
-        backdrop-filter: blur(16px);
-        box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.5);
-        margin-bottom: 1.5rem;
+        background-color: #0e0f17 !important;
+        border: 1px solid rgba(255, 255, 255, 0.03) !important;
+        border-radius: 16px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.7) !important;
+        margin-bottom: 1.5rem !important;
     }
     
     /* Missing Skill Pills */
     .skill-badge {
         display: inline-flex;
         align-items: center;
-        background: rgba(236, 72, 153, 0.08);
-        border: 1px solid rgba(236, 72, 153, 0.25);
-        color: #fbcfe8;
-        border-radius: 9999px;
-        padding: 6px 14px;
-        font-size: 0.75rem;
-        margin: 4px;
-        font-weight: 700;
-        letter-spacing: 0.03em;
+        background: rgba(244, 63, 94, 0.05) !important;
+        border: 1px solid rgba(244, 63, 94, 0.15) !important;
+        color: #fda4af !important;
+        border-radius: 6px !important;
+        padding: 4px 10px !important;
+        font-size: 0.75rem !important;
+        margin: 4px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.02em;
         transition: all 0.2s ease;
     }
     .skill-badge:hover {
-        background: rgba(236, 72, 153, 0.15);
-        border-color: rgba(236, 72, 153, 0.4);
+        background: rgba(244, 63, 94, 0.1) !important;
+        border-color: rgba(244, 63, 94, 0.3) !important;
     }
     
     /* Score display elements */
     .score-circle {
-        font-size: 4rem;
+        font-size: 4.5rem;
         font-weight: 900;
         background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
         -webkit-background-clip: text;
@@ -86,31 +127,28 @@ st.markdown("""
         margin-top: 0.5rem;
     }
     .score-label {
-        font-size: 0.8rem;
-        color: #64748b;
+        font-size: 0.75rem;
+        color: #475569;
         text-transform: uppercase;
         letter-spacing: 0.15em;
-        font-weight: 700;
+        font-weight: 800;
         text-align: center;
     }
     
     /* Bullet list tables */
     .bullet-row {
-        border-left: 4px solid #6366f1;
-        background: rgba(99, 102, 241, 0.03);
-        border-radius: 0 16px 16px 0;
+        border: 1px solid rgba(255, 255, 255, 0.02) !important;
+        background: rgba(255, 255, 255, 0.005) !important;
+        border-radius: 12px !important;
         padding: 1.25rem;
         margin-bottom: 1.25rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.02);
-        border-right: 1px solid rgba(255, 255, 255, 0.02);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
     }
     .bullet-header {
-        font-size: 0.75rem;
-        font-weight: 800;
+        font-size: 0.7rem;
+        font-weight: 900;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.25rem;
     }
     .bullet-orig-header { color: #f43f5e; }
     .bullet-new-header { color: #10b981; }
@@ -120,16 +158,19 @@ st.markdown("""
         background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
         color: white !important;
         border: none !important;
-        border-radius: 12px !important;
-        padding: 0.6rem 2rem !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 2rem !important;
         font-weight: 700 !important;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.02em;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.25) !important;
         transition: all 0.2s ease-in-out !important;
         width: 100%;
+        text-transform: uppercase;
     }
     div.stButton > button:hover {
         transform: translateY(-1px) !important;
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important;
+        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4) !important;
     }
 </style>
 """, unsafe_allow_html=True)
