@@ -522,3 +522,8 @@ if st.session_state.history:
                     <div style="font-size: 0.75rem; color: var(--ink-muted);">Gaps: {run['gaps']} | Bullet Revisions: {run['bullets']}</div>
                 </div>
                 """, unsafe_allow_html=True)
+        
+        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+        if st.button("Clear Version Log", key="clear_log_btn"):
+            st.session_state.history = []
+            st.rerun()
