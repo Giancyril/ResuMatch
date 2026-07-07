@@ -244,6 +244,12 @@ st.markdown("""
         padding-bottom: 1px;
     }
     .flag-term::before { content: "▸ "; }
+    .flag-term-technical { color: var(--accent) !important; border-color: var(--accent) !important; }
+    .flag-term-technical::before { content: "▪ " !important; }
+    .flag-term-tools { color: var(--amber) !important; border-color: var(--amber) !important; }
+    .flag-term-tools::before { content: "▪ " !important; }
+    .flag-term-soft { color: var(--flag) !important; border-color: var(--flag) !important; }
+    .flag-term-soft::before { content: "▪ " !important; }
 
     /* ---------------- Diff rows (bullet revisions) ---------------- */
     .diff-block {
@@ -421,13 +427,26 @@ if analyze_clicked:
                 with res_col2:
                     with st.container(border=True):
                         st.markdown('<div class="section-number">02 — Flagged Terms</div>', unsafe_allow_html=True)
-                        if missing_keywords:
-                            st.markdown(
-                                "<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 0.75rem;'>Present in the target role, absent from the resume:</p>",
-                                unsafe_allow_html=True
-                            )
-                            pills_html = "".join([f'<span class="flag-term">{kw}</span>' for kw in missing_keywords])
-                            st.markdown(f'<div class="flag-list">{pills_html}</div>', unsafe_allow_html=True)
+                        
+                        kw_tech = analysis.get("missing_keywords_technical", [])
+                        kw_tools = analysis.get("missing_keywords_tools", [])
+                        kw_soft = analysis.get("missing_keywords_soft", [])
+                        
+                        has_any = kw_tech or kw_tools or kw_soft
+                        
+                        if has_any:
+                            if kw_tech:
+                                st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--accent); margin: 0.5rem 0 0.25rem 0;'>Technical Skills:</p>", unsafe_allow_html=True)
+                                pills = "".join([f'<span class="flag-term flag-term-technical">{kw}</span>' for kw in kw_tech])
+                                st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
+                            if kw_tools:
+                                st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--amber); margin: 0.5rem 0 0.25rem 0;'>Tools & Infrastructure:</p>", unsafe_allow_html=True)
+                                pills = "".join([f'<span class="flag-term flag-term-tools">{kw}</span>' for kw in kw_tools])
+                                st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
+                            if kw_soft:
+                                st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--flag); margin: 0.5rem 0 0.25rem 0;'>Soft Skills & Methodologies:</p>", unsafe_allow_html=True)
+                                pills = "".join([f'<span class="flag-term flag-term-soft">{kw}</span>' for kw in kw_soft])
+                                st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
                         else:
                             st.markdown(
                                 "<p style='font-size: 0.85rem; color: var(--accent); font-weight: 500;'>No material gaps found against the target role's requirements.</p>",
