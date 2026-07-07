@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 from gemini_service import analyze_match
 
 # Page Configuration
@@ -495,12 +496,22 @@ if analyze_clicked:
                     report_content += f"   Impact: {bullet.get('impact')}\n\n"
 
                 st.markdown("<div style='margin-top: 1.25rem;'></div>", unsafe_allow_html=True)
-                st.download_button(
-                    label="Download Report (.txt)",
-                    data=report_content,
-                    file_name="job_alignment_report.txt",
-                    mime="text/plain"
-                )
+                dl_col1, dl_col2 = st.columns(2)
+                with dl_col1:
+                    st.download_button(
+                        label="Download Report (.txt)",
+                        data=report_content,
+                        file_name="job_alignment_report.txt",
+                        mime="text/plain"
+                    )
+                with dl_col2:
+                    json_content = json.dumps(analysis, indent=2)
+                    st.download_button(
+                        label="Download Report (.json)",
+                        data=json_content,
+                        file_name="job_alignment_report.json",
+                        mime="application/json"
+                    )
 
             except Exception as ex:
                 st.error(f"Review could not be filed. Error details: {ex}")
