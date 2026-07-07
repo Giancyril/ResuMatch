@@ -329,6 +329,7 @@ with col1:
                     resume_default = extract_text_from_pdf(file_bytes)
                 else:
                     resume_default = file_bytes.decode("utf-8", errors="ignore")
+                st.markdown(f'<p style="font-size: 0.72rem; color: var(--accent); font-family: monospace; margin: -5px 0 10px 0;">✔ Loaded {len(resume_default)} chars. You can edit below.</p>', unsafe_allow_html=True)
             except Exception as ex:
                 st.error(f"Error loading resume file: {ex}")
         
@@ -361,6 +362,7 @@ with col2:
                     jd_default = extract_text_from_pdf(file_bytes)
                 else:
                     jd_default = file_bytes.decode("utf-8", errors="ignore")
+                st.markdown(f'<p style="font-size: 0.72rem; color: var(--accent); font-family: monospace; margin: -5px 0 10px 0;">✔ Loaded {len(jd_default)} chars. You can edit below.</p>', unsafe_allow_html=True)
             except Exception as ex:
                 st.error(f"Error loading job description file: {ex}")
         
