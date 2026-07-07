@@ -360,11 +360,11 @@ st.markdown("""
         color: #302E2B !important;
         font-weight: 500 !important;
     }
-    /* Browse files button inside uploader */
+    /* Browse files button inside uploader (White background with dark borders and text) */
     section[data-testid="stFileUploaderDropzone"] button {
-        background-color: #201E1B !important;
-        color: #FFFFFF !important;
-        border: 1px solid #201E1B !important;
+        background-color: #FFFFFF !important;
+        color: #201E1B !important;
+        border: 1px solid var(--rule) !important;
         border-radius: 2px !important;
         padding: 8px 16px !important;
         font-size: 0.8rem !important;
@@ -372,9 +372,9 @@ st.markdown("""
         transition: all 0.15s ease-in-out !important;
     }
     section[data-testid="stFileUploaderDropzone"] button:hover {
-        background-color: #1F4D3A !important;
-        border-color: #1F4D3A !important;
-        color: #FFFFFF !important;
+        background-color: var(--paper) !important;
+        border-color: var(--accent) !important;
+        color: var(--accent) !important;
     }
     div[data-testid="stUploadedFile"] {
         background-color: var(--surface) !important;
@@ -388,6 +388,45 @@ st.markdown("""
     }
     div[data-testid="stUploadedFile"] button {
         color: var(--flag) !important;
+    }
+
+    /* ---------------- Text Input (URL Scraper) styling ---------------- */
+    div[data-baseweb="input"] {
+        border: none !important;
+        background: transparent !important;
+    }
+    div[data-baseweb="input"] > div {
+        background-color: var(--surface) !important;
+        border: 1px solid var(--rule) !important;
+        border-radius: 4px !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+    div[data-baseweb="input"]:focus-within > div,
+    div[data-baseweb="input"] > div:focus-within,
+    div[data-baseweb="input"] div:focus-within,
+    div[data-baseweb="input"] *:focus,
+    div[data-baseweb="input"] *:focus-within,
+    input:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 1px var(--accent) !important;
+        outline: none !important;
+    }
+    input {
+        background-color: var(--surface) !important;
+        color: #000000 !important;
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.85rem !important;
+        line-height: 1.6 !important;
+    }
+    input::placeholder {
+        color: #70685C !important;
+        opacity: 0.85 !important;
+    }
+    div[data-testid="stTextInput"] label p {
+        color: var(--ink) !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -412,6 +451,28 @@ tab_single, tab_multi, tab_cover = st.tabs([
 # Tab 1: Single Resume Review
 # ---------------------------------------------------------------------------
 with tab_single:
+    # URL Scraper Input (Full Width above the two side-by-side exhibits)
+    with st.container(border=True):
+        st.markdown('<span class="exhibit-label">Auto-Scrape Target Role URL</span>', unsafe_allow_html=True)
+        url_input = st.text_input(
+            "Paste Job Posting URL (LinkedIn, Indeed, Lever, Greenhouse, etc.)",
+            value=st.session_state.url_last_scraped if st.session_state.url_last_scraped else "",
+            placeholder="https://...",
+            key="jd_url_input_single",
+            label_visibility="visible"
+        )
+        
+        if url_input.strip() and url_input != st.session_state.url_last_scraped:
+            with st.spinner("Scraping job description..."):
+                try:
+                    scraped_text = scrape_job_description(url_input)
+                    st.session_state.jd_text_state = scraped_text
+                    st.session_state.url_last_scraped = url_input
+                    st.success("Successfully scraped Job Description! The text has been populated in Exhibit B below.")
+                except Exception as e:
+                    st.error(f"Scraping failed: {e}")
+
+    # Side-by-side Exhibits
     col1, col2 = st.columns(2)
 
     with col1:
@@ -450,23 +511,6 @@ with tab_single:
         with st.container(border=True):
             st.markdown('<span class="exhibit-label">Exhibit B — Target Role</span>', unsafe_allow_html=True)
             
-            # Scrape input
-            url_input = st.text_input(
-                "Paste Job Posting URL (LinkedIn, Indeed, Lever, Greenhouse, etc.)",
-                placeholder="https://...",
-                key="jd_url_input_single"
-            )
-            
-            if url_input.strip() and url_input != st.session_state.url_last_scraped:
-                with st.spinner("Scraping job description..."):
-                    try:
-                        scraped_text = scrape_job_description(url_input)
-                        st.session_state.jd_text_state = scraped_text
-                        st.session_state.url_last_scraped = url_input
-                        st.success("Successfully scraped Job Description!")
-                    except Exception as e:
-                        st.error(f"Scraping failed: {e}")
-            
             uploaded_jd = st.file_uploader(
                 "Upload Job Description (PDF or TXT)",
                 type=["pdf", "txt"],
@@ -498,6 +542,7 @@ with tab_single:
     st.markdown("<div style='max-width: 260px; margin: 1.75rem auto 0.5rem auto;'>", unsafe_allow_html=True)
     analyze_clicked = st.button("Review Alignment", key="analyze_btn_single")
     st.markdown("</div>", unsafe_allow_html=True)
+
 
     if analyze_clicked:
         if not resume_input.strip() or not jd_input.strip():
