@@ -1,6 +1,8 @@
 import streamlit as st
 import json
-from gemini_service import analyze_match
+from gemini_service import analyze_match, generate_cover_letter
+from scraper import scrape_job_description
+from utils import extract_text_from_pdf
 
 # Page Configuration
 st.set_page_config(
@@ -10,15 +12,20 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Initialize Session State Version Comparison History
+# Initialize Session State
 if "history" not in st.session_state:
     st.session_state.history = []
+if "resume_text_state" not in st.session_state:
+    st.session_state.resume_text_state = ""
+if "jd_text_state" not in st.session_state:
+    st.session_state.jd_text_state = ""
+if "url_last_scraped" not in st.session_state:
+    st.session_state.url_last_scraped = ""
+if "cover_letter" not in st.session_state:
+    st.session_state.cover_letter = ""
 
 # ---------------------------------------------------------------------------
 # Design system: "Document Review Report"
-# A resume and job description are treated as exhibits in a formal review.
-# Missing keywords are flagged like proofreader's marks; rewritten bullets
-# are shown as track-changes diffs; the match score is an ink stamp verdict.
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -57,6 +64,26 @@ st.markdown("""
     ::-webkit-scrollbar-track { background: var(--paper); }
     ::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+    /* Style Streamlit Tabs */
+    button[data-baseweb="tab"] {
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        color: var(--ink-muted) !important;
+        background-color: transparent !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: var(--accent) !important;
+        border-bottom: 2px solid var(--accent) !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        color: var(--accent) !important;
+    }
 
     /* ---------------- Letterhead ---------------- */
     .letterhead {
@@ -303,44 +330,51 @@ st.markdown("""
         letter-spacing: 0.1em;
         text-transform: uppercase;
         font-weight: 600 !important;
+        width: 100% !important;
     }
 
-    /* ---------------- File Uploader Styling ---------------- */
+    /* ---------------- File Uploader Styling (High Contrast & Visible Text) ---------------- */
+    div[data-testid="stFileUploader"] {
+        color: #000000 !important;
+    }
     div[data-testid="stFileUploader"] label {
-        color: var(--ink) !important;
+        color: #000000 !important;
         font-family: 'IBM Plex Sans', sans-serif !important;
         font-size: 0.85rem !important;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
     }
-    div[data-testid="stFileUploader"] > section {
-        background-color: var(--surface) !important;
-        border: 1px dashed var(--rule) !important;
+    section[data-testid="stFileUploaderDropzone"] {
+        background-color: #FFFFFF !important;
+        border: 2px dashed #201E1B !important;
         border-radius: 4px !important;
         padding: 15px !important;
     }
-    div[data-testid="stFileUploader"] > section:hover {
-        border-color: var(--accent) !important;
-    }
-    div[data-testid="stFileUploader"] [data-testid="stMarkdownContainer"] p,
-    div[data-testid="stFileUploader"] span,
-    div[data-testid="stFileUploader"] small {
-        color: var(--ink-muted) !important;
-        font-size: 0.8rem !important;
-    }
-    div[data-testid="stFileUploader"] button {
-        background-color: var(--paper) !important;
-        color: var(--ink) !important;
-        border: 1px solid var(--rule) !important;
-        border-radius: 2px !important;
-        padding: 4px 12px !important;
-        font-size: 0.8rem !important;
+    section[data-testid="stFileUploaderDropzone"] p {
+        color: #000000 !important;
         font-weight: 500 !important;
+    }
+    section[data-testid="stFileUploaderDropzone"] span {
+        color: #000000 !important;
+    }
+    section[data-testid="stFileUploaderDropzone"] small {
+        color: #302E2B !important;
+        font-weight: 500 !important;
+    }
+    /* Browse files button inside uploader */
+    section[data-testid="stFileUploaderDropzone"] button {
+        background-color: #201E1B !important;
+        color: #FFFFFF !important;
+        border: 1px solid #201E1B !important;
+        border-radius: 2px !important;
+        padding: 8px 16px !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
         transition: all 0.15s ease-in-out !important;
     }
-    div[data-testid="stFileUploader"] button:hover {
-        background-color: var(--rule) !important;
-        border-color: var(--ink-muted) !important;
-        color: var(--ink) !important;
+    section[data-testid="stFileUploaderDropzone"] button:hover {
+        background-color: #1F4D3A !important;
+        border-color: #1F4D3A !important;
+        color: #FFFFFF !important;
     }
     div[data-testid="stUploadedFile"] {
         background-color: var(--surface) !important;
@@ -363,245 +397,444 @@ st.markdown("""
 <div class="letterhead">
     <div class="eyebrow">Document Review Report</div>
     <div class="masthead">Resu<em>Match</em></div>
-    <div class="deck">Submit your resume and a target role as exhibits. Gemini reviews the pairing and returns a scored alignment report with flagged gaps and recommended revisions.</div>
+    <div class="deck">Submit your resume and a target role as exhibits. Gemini reviews the pairing and returns a scored alignment report with flagged gaps, recommended revisions, and customized career roadmaps.</div>
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------- Exhibits (inputs) ----------------
-col1, col2 = st.columns(2)
+# Create workspace tabs
+tab_single, tab_multi, tab_cover = st.tabs([
+    "Single Resume Review",
+    "Multi-Resume Comparison",
+    "Cover Letter Workspace"
+])
 
-with col1:
-    with st.container(border=True):
-        st.markdown('<span class="exhibit-label">Exhibit A — Resume</span>', unsafe_allow_html=True)
-        
-        # File uploader option for resume
-        uploaded_resume = st.file_uploader(
-            "Upload Resume (PDF or TXT)",
-            type=["pdf", "txt"],
-            key="resume_uploader",
-            label_visibility="visible"
-        )
-        
-        resume_default = ""
-        if uploaded_resume is not None:
-            try:
-                file_bytes = uploaded_resume.read()
-                if uploaded_resume.name.endswith(".pdf"):
-                    from utils import extract_text_from_pdf
-                    resume_default = extract_text_from_pdf(file_bytes)
-                else:
-                    resume_default = file_bytes.decode("utf-8", errors="ignore")
-                st.markdown(f'<p style="font-size: 0.72rem; color: var(--accent); font-family: monospace; margin: -5px 0 10px 0;">✔ Loaded {len(resume_default)} chars. You can edit below.</p>', unsafe_allow_html=True)
-            except Exception as ex:
-                st.error(f"Error loading resume file: {ex}")
-        
-        resume_input = st.text_area(
-            "Resume Plain Text",
-            value=resume_default,
-            height=260,
-            placeholder="Or paste your resume text here...",
-            label_visibility="collapsed"
-        )
+# ---------------------------------------------------------------------------
+# Tab 1: Single Resume Review
+# ---------------------------------------------------------------------------
+with tab_single:
+    col1, col2 = st.columns(2)
 
-with col2:
-    with st.container(border=True):
-        st.markdown('<span class="exhibit-label">Exhibit B — Target Role</span>', unsafe_allow_html=True)
-        
-        # File uploader option for job description
-        uploaded_jd = st.file_uploader(
-            "Upload Job Description (PDF or TXT)",
-            type=["pdf", "txt"],
-            key="jd_uploader",
-            label_visibility="visible"
-        )
-        
-        jd_default = ""
-        if uploaded_jd is not None:
-            try:
-                file_bytes = uploaded_jd.read()
-                if uploaded_jd.name.endswith(".pdf"):
-                    from utils import extract_text_from_pdf
-                    jd_default = extract_text_from_pdf(file_bytes)
-                else:
-                    jd_default = file_bytes.decode("utf-8", errors="ignore")
-                st.markdown(f'<p style="font-size: 0.72rem; color: var(--accent); font-family: monospace; margin: -5px 0 10px 0;">✔ Loaded {len(jd_default)} chars. You can edit below.</p>', unsafe_allow_html=True)
-            except Exception as ex:
-                st.error(f"Error loading job description file: {ex}")
-        
-        jd_input = st.text_area(
-            "Job Description Plain Text",
-            value=jd_default,
-            height=260,
-            placeholder="Or paste the target job description here...",
-            label_visibility="collapsed"
-        )
+    with col1:
+        with st.container(border=True):
+            st.markdown('<span class="exhibit-label">Exhibit A — Resume</span>', unsafe_allow_html=True)
+            
+            uploaded_resume = st.file_uploader(
+                "Upload Resume (PDF or TXT)",
+                type=["pdf", "txt"],
+                key="resume_uploader_single",
+                label_visibility="visible"
+            )
+            
+            if uploaded_resume is not None:
+                try:
+                    file_bytes = uploaded_resume.read()
+                    if uploaded_resume.name.endswith(".pdf"):
+                        st.session_state.resume_text_state = extract_text_from_pdf(file_bytes)
+                    else:
+                        st.session_state.resume_text_state = file_bytes.decode("utf-8", errors="ignore")
+                    st.markdown(f'<p style="font-size: 0.72rem; color: var(--accent); font-family: monospace; margin: -5px 0 10px 0;">✔ Loaded {len(st.session_state.resume_text_state)} chars. You can edit below.</p>', unsafe_allow_html=True)
+                except Exception as ex:
+                    st.error(f"Error loading resume file: {ex}")
+            
+            resume_input = st.text_area(
+                "Resume Plain Text",
+                value=st.session_state.resume_text_state,
+                height=260,
+                placeholder="Or paste your resume text here...",
+                label_visibility="collapsed",
+                key="resume_text_area_single"
+            )
+            st.session_state.resume_text_state = resume_input
 
-st.markdown("<div style='max-width: 260px; margin: 1.75rem auto 0.5rem auto;'>", unsafe_allow_html=True)
-analyze_clicked = st.button("Review Alignment")
-st.markdown("</div>", unsafe_allow_html=True)
+    with col2:
+        with st.container(border=True):
+            st.markdown('<span class="exhibit-label">Exhibit B — Target Role</span>', unsafe_allow_html=True)
+            
+            # Scrape input
+            url_input = st.text_input(
+                "Paste Job Posting URL (LinkedIn, Indeed, Lever, Greenhouse, etc.)",
+                placeholder="https://...",
+                key="jd_url_input_single"
+            )
+            
+            if url_input.strip() and url_input != st.session_state.url_last_scraped:
+                with st.spinner("Scraping job description..."):
+                    try:
+                        scraped_text = scrape_job_description(url_input)
+                        st.session_state.jd_text_state = scraped_text
+                        st.session_state.url_last_scraped = url_input
+                        st.success("Successfully scraped Job Description!")
+                    except Exception as e:
+                        st.error(f"Scraping failed: {e}")
+            
+            uploaded_jd = st.file_uploader(
+                "Upload Job Description (PDF or TXT)",
+                type=["pdf", "txt"],
+                key="jd_uploader_single",
+                label_visibility="visible"
+            )
+            
+            if uploaded_jd is not None:
+                try:
+                    file_bytes = uploaded_jd.read()
+                    if uploaded_jd.name.endswith(".pdf"):
+                        st.session_state.jd_text_state = extract_text_from_pdf(file_bytes)
+                    else:
+                        st.session_state.jd_text_state = file_bytes.decode("utf-8", errors="ignore")
+                    st.markdown(f'<p style="font-size: 0.72rem; color: var(--accent); font-family: monospace; margin: -5px 0 10px 0;">✔ Loaded {len(st.session_state.jd_text_state)} chars. You can edit below.</p>', unsafe_allow_html=True)
+                except Exception as ex:
+                    st.error(f"Error loading job description: {ex}")
+            
+            jd_input = st.text_area(
+                "Job Description Plain Text",
+                value=st.session_state.jd_text_state,
+                height=260,
+                placeholder="Or paste the target job description here...",
+                label_visibility="collapsed",
+                key="jd_text_area_single"
+            )
+            st.session_state.jd_text_state = jd_input
 
-# ---------------- Analysis ----------------
-if analyze_clicked:
-    if not resume_input.strip() or not jd_input.strip():
-        st.warning("Both exhibits are required before a review can be filed. Paste your resume and the job description above.")
-    else:
-        with st.spinner("Filing exhibits and cross-referencing keyword density…"):
-            try:
-                analysis = analyze_match(resume_input, jd_input)
-                score = int(analysis.get("match_score", 0))
-                
-                # Append analysis results to history logs for comparison
-                st.session_state.history.append({
-                    "version": f"v{len(st.session_state.history) + 1}",
-                    "score": score,
-                    "gaps": len(analysis.get("missing_keywords", [])),
-                    "bullets": len(analysis.get("rewritten_bullets", []))
-                })
-                missing_keywords = analysis.get("missing_keywords", [])
-                rewritten_bullets = analysis.get("rewritten_bullets", [])
+    st.markdown("<div style='max-width: 260px; margin: 1.75rem auto 0.5rem auto;'>", unsafe_allow_html=True)
+    analyze_clicked = st.button("Review Alignment", key="analyze_btn_single")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-                if score >= 80:
-                    stamp_color, verdict = "#1F4D3A", "Strong Match"
-                elif score >= 50:
-                    stamp_color, verdict = "#9C6B14", "Partial Match"
-                else:
-                    stamp_color, verdict = "#A13327", "Needs Revision"
-
-                st.markdown("""
-                <div class="report-heading">
-                    <div class="report-kicker">Findings</div>
-                    <div class="report-title">Alignment Report</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                res_col1, res_col2 = st.columns([1, 2])
-
-                with res_col1:
-                    with st.container(border=True):
-                        st.markdown('<div class="section-number">01 — Alignment Score</div>', unsafe_allow_html=True)
-                        st.markdown(f"""
-                        <div class="stamp-wrap">
-                            <div class="stamp" style="--stamp-color: {stamp_color};">
-                                <div class="stamp-score">{score}%</div>
-                                <div class="stamp-verdict">{verdict}</div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-                with res_col2:
-                    with st.container(border=True):
-                        st.markdown('<div class="section-number">02 — Flagged Terms</div>', unsafe_allow_html=True)
-                        
-                        kw_tech = analysis.get("missing_keywords_technical", [])
-                        kw_tools = analysis.get("missing_keywords_tools", [])
-                        kw_soft = analysis.get("missing_keywords_soft", [])
-                        
-                        has_any = kw_tech or kw_tools or kw_soft
-                        
-                        if has_any:
-                            if kw_tech:
-                                st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--accent); margin: 0.5rem 0 0.25rem 0;'>Technical Skills:</p>", unsafe_allow_html=True)
-                                pills = "".join([f'<span class="flag-term flag-term-technical">{kw}</span>' for kw in kw_tech])
-                                st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
-                            if kw_tools:
-                                st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--amber); margin: 0.5rem 0 0.25rem 0;'>Tools & Infrastructure:</p>", unsafe_allow_html=True)
-                                pills = "".join([f'<span class="flag-term flag-term-tools">{kw}</span>' for kw in kw_tools])
-                                st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
-                            if kw_soft:
-                                st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--flag); margin: 0.5rem 0 0.25rem 0;'>Soft Skills & Methodologies:</p>", unsafe_allow_html=True)
-                                pills = "".join([f'<span class="flag-term flag-term-soft">{kw}</span>' for kw in kw_soft])
-                                st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(
-                                "<p style='font-size: 0.85rem; color: var(--accent); font-weight: 500;'>No material gaps found against the target role's requirements.</p>",
-                                unsafe_allow_html=True
-                            )
-
-                # Generate interview questions using missing keyword information
-                st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
-                with st.container(border=True):
-                    st.markdown('<div class="section-number">02.5 — Custom Interview Prep</div>', unsafe_allow_html=True)
-                    st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.25rem;'>Targeted questions covering your identified keyword gaps:</p>", unsafe_allow_html=True)
+    if analyze_clicked:
+        if not resume_input.strip() or not jd_input.strip():
+            st.warning("Both exhibits are required before a review can be filed. Paste your resume and the job description above.")
+        else:
+            with st.spinner("Filing exhibits and cross-referencing keyword density…"):
+                try:
+                    analysis = analyze_match(resume_input, jd_input)
+                    score = int(analysis.get("match_score", 0))
                     
-                    gap_sample = missing_keywords[:3] if missing_keywords else ["Technical Skills"]
-                    for idx, gap in enumerate(gap_sample):
-                        st.markdown(f"""
-                        <div style="border-left: 2px solid var(--amber); padding-left: 10px; margin-bottom: 1rem;">
-                            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 700; color: var(--amber); text-transform: uppercase;">Question {idx+1}:</span>
-                            <p style="font-size: 0.85rem; color: var(--ink); margin: 2px 0 0 0; font-weight: 500;">"Can you provide an example of a project where you utilized {gap} to solve a complex engineering constraint?"</p>
-                            <p style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px;"><b>Suggested Strategy:</b> Frame your response using the STAR method. Describe the situation, highlight why {gap} was critical, and mention positive results.</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    st.session_state.history.append({
+                        "version": f"v{len(st.session_state.history) + 1}",
+                        "score": score,
+                        "gaps": len(analysis.get("missing_keywords", [])),
+                        "bullets": len(analysis.get("rewritten_bullets", []))
+                    })
+                    
+                    missing_keywords = analysis.get("missing_keywords", [])
+                    rewritten_bullets = analysis.get("rewritten_bullets", [])
+                    skill_roadmaps = analysis.get("skill_roadmaps", [])
 
-                st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
-                with st.container(border=True):
-                    st.markdown('<div class="section-number">03 — Recommended Revisions</div>', unsafe_allow_html=True)
-                    st.markdown(
-                        "<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.25rem;'>Tracked changes, original struck through and replaced:</p>",
-                        unsafe_allow_html=True
-                    )
-                    for bullet in rewritten_bullets:
-                        orig = bullet.get("original", "")
-                        rewritten = bullet.get("rewritten", "")
-                        impact = bullet.get("impact", "")
-                        st.markdown(f"""
-                        <div class="diff-block">
-                            <div class="diff-line diff-remove">− {orig}</div>
-                            <div class="diff-line diff-add">+ {rewritten}</div>
-                            <div class="diff-impact"><b>Why:</b> {impact}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    if score >= 80:
+                        stamp_color, verdict = "#1F4D3A", "Strong Match"
+                    elif score >= 50:
+                        stamp_color, verdict = "#9C6B14", "Partial Match"
+                    else:
+                        stamp_color, verdict = "#A13327", "Needs Revision"
 
-                report_content = "RESUME & JOB DESCRIPTION MATCH REPORT\n"
-                report_content += f"ATS Score: {score}% ({verdict})\n\n"
-                report_content += "MISSING KEYWORDS:\n"
-                report_content += ", ".join(missing_keywords) + "\n\n"
-                report_content += "REWRITTEN BULLETS:\n"
-                for idx, bullet in enumerate(rewritten_bullets):
-                    report_content += f"{idx+1}. Original: {bullet.get('original')}\n"
-                    report_content += f"   Upgraded: {bullet.get('rewritten')}\n"
-                    report_content += f"   Impact: {bullet.get('impact')}\n\n"
+                    st.markdown("""
+                    <div class="report-heading">
+                        <div class="report-kicker">Findings</div>
+                        <div class="report-title">Alignment Report</div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                st.markdown("<div style='margin-top: 1.25rem;'></div>", unsafe_allow_html=True)
-                dl_col1, dl_col2 = st.columns(2)
-                with dl_col1:
-                    st.download_button(
-                        label="Download Report (.txt)",
-                        data=report_content,
-                        file_name="job_alignment_report.txt",
-                        mime="text/plain"
-                    )
-                with dl_col2:
-                    json_content = json.dumps(analysis, indent=2)
-                    st.download_button(
-                        label="Download Report (.json)",
-                        data=json_content,
-                        file_name="job_alignment_report.json",
-                        mime="application/json"
-                    )
+                    res_col1, res_col2 = st.columns([1, 2])
 
-            except Exception as ex:
-                st.error(f"Review could not be filed. Error details: {ex}")
+                    with res_col1:
+                        with st.container(border=True):
+                            st.markdown('<div class="section-number">01 — Alignment Score</div>', unsafe_allow_html=True)
+                            st.markdown(f"""
+                            <div class="stamp-wrap">
+                                <div class="stamp" style="--stamp-color: {stamp_color};">
+                                    <div class="stamp-score">{score}%</div>
+                                    <div class="stamp-verdict">{verdict}</div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
 
-# ----------------- Version History Comparison Panel -----------------
-if st.session_state.history:
-    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-    with st.container(border=True):
-        st.markdown('<div class="section-number">04 — Version Analysis Log</div>', unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1rem;'>Compare alignment metrics across consecutive runs to track ATS score improvements:</p>", unsafe_allow_html=True)
+                    with res_col2:
+                        with st.container(border=True):
+                            st.markdown('<div class="section-number">02 — Flagged Terms</div>', unsafe_allow_html=True)
+                            
+                            kw_tech = analysis.get("missing_keywords_technical", [])
+                            kw_tools = analysis.get("missing_keywords_tools", [])
+                            kw_soft = analysis.get("missing_keywords_soft", [])
+                            
+                            has_any = kw_tech or kw_tools or kw_soft
+                            
+                            if has_any:
+                                if kw_tech:
+                                    st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--accent); margin: 0.5rem 0 0.25rem 0;'>Technical Skills:</p>", unsafe_allow_html=True)
+                                    pills = "".join([f'<span class="flag-term flag-term-technical">{kw}</span>' for kw in kw_tech])
+                                    st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
+                                if kw_tools:
+                                    st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--amber); margin: 0.5rem 0 0.25rem 0;'>Tools & Infrastructure:</p>", unsafe_allow_html=True)
+                                    pills = "".join([f'<span class="flag-term flag-term-tools">{kw}</span>' for kw in kw_tools])
+                                    st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
+                                if kw_soft:
+                                    st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--flag); margin: 0.5rem 0 0.25rem 0;'>Soft Skills & Methodologies:</p>", unsafe_allow_html=True)
+                                    pills = "".join([f'<span class="flag-term flag-term-soft">{kw}</span>' for kw in kw_soft])
+                                    st.markdown(f'<div class="flag-list">{pills}</div>', unsafe_allow_html=True)
+                            else:
+                                st.markdown(
+                                    "<p style='font-size: 0.85rem; color: var(--accent); font-weight: 500;'>No material gaps found against the target role's requirements.</p>",
+                                    unsafe_allow_html=True
+                                )
+
+                    # ---------------- Skill Roadmap Generator ----------------
+                    if skill_roadmaps:
+                        st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+                        with st.container(border=True):
+                            st.markdown('<div class="section-number">02.3 — Skill Gaps Roadmap</div>', unsafe_allow_html=True)
+                            st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.25rem;'>Actionable learning plans and projects to bridge your core skill gaps:</p>", unsafe_allow_html=True)
+                            
+                            for road in skill_roadmaps:
+                                skill_name = road.get("skill", "")
+                                steps = road.get("steps", [])
+                                if skill_name and steps:
+                                    steps_html = "".join([f'<li style="font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--ink);"><b>Step {i+1}:</b> {step}</li>' for i, step in enumerate(steps)])
+                                    st.markdown(f"""
+                                    <div style="border: 1px solid var(--rule); border-radius: 4px; padding: 0.85rem; margin-bottom: 0.75rem; background-color: var(--surface);">
+                                        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 0.5rem; border-bottom: 1px dashed var(--rule); padding-bottom: 0.25rem;">
+                                            {skill_name} Gap Closure Plan
+                                        </div>
+                                        <ul style="padding-left: 1.2rem; margin: 0;">
+                                            {steps_html}
+                                        </ul>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
+                    # ---------------- Custom Interview Prep ----------------
+                    st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+                    with st.container(border=True):
+                        st.markdown('<div class="section-number">02.7 — Custom Interview Prep</div>', unsafe_allow_html=True)
+                        st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.25rem;'>Targeted questions covering your identified keyword gaps:</p>", unsafe_allow_html=True)
+                        
+                        gap_sample = missing_keywords[:3] if missing_keywords else ["Technical Skills"]
+                        for idx, gap in enumerate(gap_sample):
+                            st.markdown(f"""
+                            <div style="border-left: 2px solid var(--amber); padding-left: 10px; margin-bottom: 1rem;">
+                                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 700; color: var(--amber); text-transform: uppercase;">Question {idx+1}:</span>
+                                <p style="font-size: 0.85rem; color: var(--ink); margin: 2px 0 0 0; font-weight: 500;">"Can you provide an example of a project where you utilized {gap} to solve a complex engineering constraint?"</p>
+                                <p style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px;"><b>Suggested Strategy:</b> Frame your response using the STAR method. Describe the situation, highlight why {gap} was critical, and mention positive results.</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                    st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+                    with st.container(border=True):
+                        st.markdown('<div class="section-number">03 — Recommended Revisions</div>', unsafe_allow_html=True)
+                        st.markdown(
+                            "<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.25rem;'>Tracked changes, original struck through and replaced:</p>",
+                            unsafe_allow_html=True
+                        )
+                        for bullet in rewritten_bullets:
+                            orig = bullet.get("original", "")
+                            rewritten = bullet.get("rewritten", "")
+                            impact = bullet.get("impact", "")
+                            st.markdown(f"""
+                            <div class="diff-block">
+                                <div class="diff-line diff-remove">− {orig}</div>
+                                <div class="diff-line diff-add">+ {rewritten}</div>
+                                <div class="diff-impact"><b>Why:</b> {impact}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                    report_content = "RESUME & JOB DESCRIPTION MATCH REPORT\n"
+                    report_content += f"ATS Score: {score}% ({verdict})\n\n"
+                    report_content += "MISSING KEYWORDS:\n"
+                    report_content += ", ".join(missing_keywords) + "\n\n"
+                    report_content += "REWRITTEN BULLETS:\n"
+                    for idx, bullet in enumerate(rewritten_bullets):
+                        report_content += f"{idx+1}. Original: {bullet.get('original')}\n"
+                        report_content += f"   Upgraded: {bullet.get('rewritten')}\n"
+                        report_content += f"   Impact: {bullet.get('impact')}\n\n"
+
+                    st.markdown("<div style='margin-top: 1.25rem;'></div>", unsafe_allow_html=True)
+                    dl_col1, dl_col2 = st.columns(2)
+                    with dl_col1:
+                        st.download_button(
+                            label="Download Report (.txt)",
+                            data=report_content,
+                            file_name="job_alignment_report.txt",
+                            mime="text/plain",
+                            key="dl_report_txt_single"
+                        )
+                    with dl_col2:
+                        json_content = json.dumps(analysis, indent=2)
+                        st.download_button(
+                            label="Download Report (.json)",
+                            data=json_content,
+                            file_name="job_alignment_report.json",
+                            mime="application/json",
+                            key="dl_report_json_single"
+                        )
+
+                except Exception as ex:
+                    st.error(f"Review could not be filed. Error details: {ex}")
+
+    # Version History Comparison Panel
+    if st.session_state.history:
+        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown('<div class="section-number">04 — Version Analysis Log</div>', unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1rem;'>Compare alignment metrics across consecutive runs to track ATS score improvements:</p>", unsafe_allow_html=True)
+            
+            cols = st.columns(len(st.session_state.history))
+            for idx, run in enumerate(st.session_state.history):
+                with cols[idx]:
+                    st.markdown(f"""
+                    <div style="border: 1px solid var(--rule); border-radius: 4px; padding: 0.75rem; text-align: center; background-color: var(--paper);">
+                        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--ink-muted);">{run['version']}</div>
+                        <div style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 600; color: var(--accent); margin: 0.25rem 0;">{run['score']}%</div>
+                        <div style="font-size: 0.75rem; color: var(--ink-muted);">Gaps: {run['gaps']} | Bullet Revisions: {run['bullets']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+            if st.button("Clear Version Log", key="clear_log_btn_single"):
+                st.session_state.history = []
+                st.rerun()
+
+# ---------------------------------------------------------------------------
+# Tab 2: Multi-Resume Comparison
+# ---------------------------------------------------------------------------
+with tab_multi:
+    st.markdown('<div class="section-number">Multi-Resume Comparison</div>', unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Upload 2 to 3 different versions of your resume to compare their ATS match scores and keyword density against the job description.</p>", unsafe_allow_html=True)
+    
+    # Check if target job description is loaded
+    if not st.session_state.jd_text_state.strip():
+        st.warning("Please upload/paste a Job Description in the 'Single Resume Review' tab or below.")
+        compare_jd_input = st.text_area(
+            "Target Job Description",
+            value=st.session_state.jd_text_state,
+            height=150,
+            placeholder="Paste the target job description here...",
+            key="compare_jd_text_area"
+        )
+        st.session_state.jd_text_state = compare_jd_input
+    else:
+        st.info("Using the target job description loaded from your session state.")
         
-        cols = st.columns(len(st.session_state.history))
-        for idx, run in enumerate(st.session_state.history):
-            with cols[idx]:
-                st.markdown(f"""
-                <div style="border: 1px solid var(--rule); border-radius: 4px; padding: 0.75rem; text-align: center; background-color: var(--paper);">
-                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--ink-muted);">{run['version']}</div>
-                    <div style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 600; color: var(--accent); margin: 0.25rem 0;">{run['score']}%</div>
-                    <div style="font-size: 0.75rem; color: var(--ink-muted);">Gaps: {run['gaps']} | Bullet Revisions: {run['bullets']}</div>
-                </div>
-                """, unsafe_allow_html=True)
+    uploaded_resumes = st.file_uploader(
+        "Upload 2-3 Resume Versions",
+        type=["pdf", "txt"],
+        accept_multiple_files=True,
+        key="multi_resumes_uploader"
+    )
+    
+    if uploaded_resumes:
+        if len(uploaded_resumes) < 2:
+            st.warning("Please upload at least 2 resumes to compare.")
+        elif len(uploaded_resumes) > 5:
+            st.error("You can upload a maximum of 5 resumes for comparison.")
+        else:
+            st.markdown("<div style='max-width: 260px; margin: 1rem 0;'>", unsafe_allow_html=True)
+            run_comparison = st.button("Compare Resume Versions", key="run_multi_comparison")
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            if run_comparison:
+                with st.spinner("Analyzing all uploaded resumes side-by-side..."):
+                    results = []
+                    for idx, resume_file in enumerate(uploaded_resumes):
+                        try:
+                            file_bytes = resume_file.read()
+                            if resume_file.name.endswith(".pdf"):
+                                text = extract_text_from_pdf(file_bytes)
+                            else:
+                                text = file_bytes.decode("utf-8", errors="ignore")
+                                
+                            analysis = analyze_match(text, st.session_state.jd_text_state)
+                            results.append({
+                                "name": resume_file.name,
+                                "score": int(analysis.get("match_score", 0)),
+                                "tech_gaps": analysis.get("missing_keywords_technical", []),
+                                "tools_gaps": analysis.get("missing_keywords_tools", []),
+                                "soft_gaps": analysis.get("missing_keywords_soft", []),
+                                "bullets_count": len(analysis.get("rewritten_bullets", [])),
+                                "analysis": analysis
+                            })
+                        except Exception as ex:
+                            st.error(f"Failed to analyze {resume_file.name}: {ex}")
+                    
+                    if results:
+                        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+                        st.markdown("<h3 style='font-family: Fraunces, serif; text-align: center; margin-bottom: 2rem;'>Side-by-Side Comparison Matrix</h3>", unsafe_allow_html=True)
+                        
+                        cols = st.columns(len(results))
+                        for i, res in enumerate(results):
+                            with cols[i]:
+                                if res["score"] >= 80:
+                                    sc_color, verdict = "#1F4D3A", "Strong"
+                                elif res["score"] >= 50:
+                                    sc_color, verdict = "#9C6B14", "Partial"
+                                else:
+                                    sc_color, verdict = "#A13327", "Needs Revision"
+                                    
+                                st.markdown(f"""
+                                <div style="border: 2px solid var(--rule); padding: 1.25rem; border-radius: 4px; background-color: var(--surface); height: 100%;">
+                                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; border-bottom: 1px solid var(--rule); padding-bottom: 0.5rem; margin-bottom: 1rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                        {res['name']}
+                                    </div>
+                                    <div class="stamp-wrap" style="padding: 0.5rem 0;">
+                                        <div class="stamp" style="--stamp-color: {sc_color}; width: 120px; height: 120px;">
+                                            <div class="stamp-score" style="font-size: 1.8rem;">{res['score']}%</div>
+                                            <div class="stamp-verdict" style="font-size: 0.55rem;">{verdict}</div>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 1rem;">
+                                        <p style="font-size: 0.8rem; margin: 0.25rem 0;"><b>Technical Gaps:</b> {len(res['tech_gaps'])}</p>
+                                        <p style="font-size: 0.8rem; margin: 0.25rem 0;"><b>Tools Gaps:</b> {len(res['tools_gaps'])}</p>
+                                        <p style="font-size: 0.8rem; margin: 0.25rem 0;"><b>Bullet Improvements:</b> {res['bullets_count']}</p>
+                                    </div>
+                                    <div style="margin-top: 1rem; border-top: 1px dashed var(--rule); padding-top: 0.5rem;">
+                                        <p style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--ink-muted);">Key Missing Skills:</p>
+                                        <div style="font-family: monospace; font-size: 0.75rem; color: var(--flag);">
+                                            {", ".join(res['tech_gaps'][:4]) if res['tech_gaps'] else "None"}
+                                        </div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Tab 3: Cover Letter Workspace
+# ---------------------------------------------------------------------------
+with tab_cover:
+    st.markdown('<div class="section-number">Cover Letter Generator</div>', unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Generate a professionally written, tailored cover letter aligning your resume and job description inputs using Gemini.</p>", unsafe_allow_html=True)
+    
+    if not st.session_state.resume_text_state.strip() or not st.session_state.jd_text_state.strip():
+        st.warning("Please upload/paste both your Resume and Job Description in the 'Single Resume Review' tab to generate a cover letter.")
+    else:
+        st.markdown("<div style='max-width: 260px; margin: 1rem 0;'>", unsafe_allow_html=True)
+        run_cover_letter_gen = st.button("Generate Cover Letter", key="run_cover_letter_gen")
+        st.markdown("</div>", unsafe_allow_html=True)
         
-        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-        if st.button("Clear Version Log", key="clear_log_btn"):
-            st.session_state.history = []
-            st.rerun()
+        if run_cover_letter_gen:
+            with st.spinner("Analyzing inputs and drafting a customized cover letter..."):
+                try:
+                    cl_text = generate_cover_letter(st.session_state.resume_text_state, st.session_state.jd_text_state)
+                    st.session_state.cover_letter = cl_text
+                    st.success("Cover letter drafted successfully!")
+                except Exception as e:
+                    st.error(f"Failed to generate cover letter: {e}")
+                    
+        if st.session_state.cover_letter:
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            
+            # Text area allowing edits
+            edited_cl = st.text_area(
+                "Customize Cover Letter Draft",
+                value=st.session_state.cover_letter,
+                height=450,
+                key="cl_text_area"
+            )
+            st.session_state.cover_letter = edited_cl
+            
+            col_dl, col_spacer = st.columns([1, 3])
+            with col_dl:
+                st.download_button(
+                    label="Download Draft (.txt)",
+                    data=st.session_state.cover_letter,
+                    file_name="tailored_cover_letter.txt",
+                    mime="text/plain",
+                    key="dl_cover_letter_txt"
+                )
+            
+            st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--ink-muted); margin-top: 1.5rem; margin-bottom: 0.5rem;'>Raw Copy Preview:</p>", unsafe_allow_html=True)
+            st.code(st.session_state.cover_letter, language="text")
