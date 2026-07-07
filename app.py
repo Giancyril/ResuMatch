@@ -152,10 +152,13 @@ st.markdown("""
 
     /* ── Letterhead ─────────────────────────────────────────────────────── */
     .letterhead {
-        text-align: center;
-        padding: 3.5rem 2rem 2.5rem;
-        margin-bottom: 0;
-        position: relative;
+        text-align: center !important;
+        padding: 3.5rem 2rem 2.5rem !important;
+        margin-bottom: 0 !important;
+        position: relative !important;
+    }
+    .letterhead * {
+        text-align: center !important;
     }
     .letterhead-rule {
         width: 48px;
@@ -188,14 +191,15 @@ st.markdown("""
         font-weight: 400;
     }
     .deck {
-        font-family: 'IBM Plex Sans', sans-serif;
-        font-size: 0.95rem;
-        color: var(--ink-muted);
-        max-width: 520px;
-        margin: 0 auto 2rem;
-        line-height: 1.7;
-        font-weight: 400;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-size: 0.95rem !important;
+        color: var(--ink-muted) !important;
+        max-width: 520px !important;
+        margin: 0 auto 2rem !important;
+        line-height: 1.7 !important;
+        font-weight: 400 !important;
         text-align: center !important;
+        display: block !important;
     }
     .letterhead-divider {
         border: none;
