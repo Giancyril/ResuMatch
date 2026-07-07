@@ -304,6 +304,57 @@ st.markdown("""
         text-transform: uppercase;
         font-weight: 600 !important;
     }
+
+    /* ---------------- File Uploader Styling ---------------- */
+    div[data-testid="stFileUploader"] label {
+        color: var(--ink) !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+    }
+    div[data-testid="stFileUploader"] > section {
+        background-color: var(--surface) !important;
+        border: 1px dashed var(--rule) !important;
+        border-radius: 4px !important;
+        padding: 15px !important;
+    }
+    div[data-testid="stFileUploader"] > section:hover {
+        border-color: var(--accent) !important;
+    }
+    div[data-testid="stFileUploader"] [data-testid="stMarkdownContainer"] p,
+    div[data-testid="stFileUploader"] span,
+    div[data-testid="stFileUploader"] small {
+        color: var(--ink-muted) !important;
+        font-size: 0.8rem !important;
+    }
+    div[data-testid="stFileUploader"] button {
+        background-color: var(--paper) !important;
+        color: var(--ink) !important;
+        border: 1px solid var(--rule) !important;
+        border-radius: 2px !important;
+        padding: 4px 12px !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+    div[data-testid="stFileUploader"] button:hover {
+        background-color: var(--rule) !important;
+        border-color: var(--ink-muted) !important;
+        color: var(--ink) !important;
+    }
+    div[data-testid="stUploadedFile"] {
+        background-color: var(--surface) !important;
+        border: 1px solid var(--rule) !important;
+        border-radius: 4px !important;
+        padding: 4px 10px !important;
+    }
+    div[data-testid="stUploadedFile"] span,
+    div[data-testid="stUploadedFile"] div {
+        color: var(--ink) !important;
+    }
+    div[data-testid="stUploadedFile"] button {
+        color: var(--flag) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
