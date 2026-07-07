@@ -31,6 +31,11 @@ st.markdown("""
         --flag-soft: rgba(161, 51, 39, 0.07);
         --amber: #9C6B14;
         --amber-soft: rgba(156, 107, 20, 0.08);
+        
+        /* Global Streamlit Focus Custom Property Overrides */
+        --primary-color: #1F4D3A !important;
+        --st-color-primary: #1F4D3A !important;
+        --st-color-border-focus: #1F4D3A !important;
     }
 
     header {visibility: hidden;}
@@ -121,9 +126,14 @@ st.markdown("""
         transition: all 0.15s ease-in-out !important;
     }
     div[data-baseweb="textarea"]:focus-within > div,
-    div[data-baseweb="textarea"] > div:focus-within {
+    div[data-baseweb="textarea"] > div:focus-within,
+    div[data-baseweb="textarea"] div:focus-within,
+    div[data-baseweb="textarea"] *:focus,
+    div[data-baseweb="textarea"] *:focus-within,
+    textarea:focus {
         border-color: var(--accent) !important;
         box-shadow: 0 0 0 1px var(--accent) !important;
+        outline: none !important;
     }
     textarea {
         background-color: var(--surface) !important;
