@@ -397,6 +397,14 @@ if analyze_clicked:
             try:
                 analysis = analyze_match(resume_input, jd_input)
                 score = int(analysis.get("match_score", 0))
+                
+                # Append analysis results to history logs for comparison
+                st.session_state.history.append({
+                    "version": f"v{len(st.session_state.history) + 1}",
+                    "score": score,
+                    "gaps": len(analysis.get("missing_keywords", [])),
+                    "bullets": len(analysis.get("rewritten_bullets", []))
+                })
                 missing_keywords = analysis.get("missing_keywords", [])
                 rewritten_bullets = analysis.get("rewritten_bullets", [])
 
