@@ -29,72 +29,87 @@ if "cover_letter" not in st.session_state:
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
+    /* ── Design Tokens ──────────────────────────────────────────────────── */
     :root {
-        --paper: #F7F4EE;
-        --surface: #FFFFFF;
-        --ink: #201E1B;
-        --ink-muted: #6B6459;
-        --rule: #DED7C9;
-        --accent: #1F4D3A;
-        --accent-soft: rgba(31, 77, 58, 0.08);
-        --flag: #A13327;
-        --flag-soft: rgba(161, 51, 39, 0.07);
-        --amber: #9C6B14;
-        --amber-soft: rgba(156, 107, 20, 0.08);
-        
-        /* Global Streamlit Focus Custom Property Overrides */
-        --primary-color: #1F4D3A !important;
-        --st-color-primary: #1F4D3A !important;
-        --st-color-border-focus: #1F4D3A !important;
+        --paper:         #F5F2EC;
+        --surface:       #FFFFFF;
+        --surface-2:     #FAFAF8;
+        --ink:           #1A1816;
+        --ink-muted:     #6B6459;
+        --ink-faint:     #A89F94;
+        --rule:          #E0D8CC;
+        --rule-strong:   #C8BFB3;
+        --accent:        #1C4434;
+        --accent-mid:    #2A5E48;
+        --accent-soft:   rgba(28, 68, 52, 0.09);
+        --accent-softer: rgba(28, 68, 52, 0.05);
+        --flag:          #922F22;
+        --flag-soft:     rgba(146, 47, 34, 0.07);
+        --amber:         #8A5E12;
+        --amber-soft:    rgba(138, 94, 18, 0.08);
+        --radius-sm:     4px;
+        --radius-md:     8px;
+        --radius-lg:     12px;
+        --shadow-sm:     0 1px 3px rgba(26,24,22,0.06), 0 1px 2px rgba(26,24,22,0.04);
+        --shadow-md:     0 4px 16px -4px rgba(26,24,22,0.12), 0 1px 4px rgba(26,24,22,0.06);
+        --shadow-lg:     0 8px 30px -8px rgba(26,24,22,0.16), 0 2px 8px rgba(26,24,22,0.06);
     }
 
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
+    /* ── Global reset ───────────────────────────────────────────────────── */
+    header { visibility: hidden; }
+    footer { visibility: hidden; }
+    #MainMenu { visibility: hidden; }
 
     .stApp {
         background-color: var(--paper) !important;
+        background-image: 
+            radial-gradient(ellipse 80% 50% at 50% -10%, rgba(28,68,52,0.06) 0%, transparent 70%);
         color: var(--ink);
-        font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+        font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     }
 
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: var(--paper); }
-    ::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
+    .block-container {
+        padding-top: 0 !important;
+        max-width: 1200px !important;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
 
-    /* ── Tabs: nuclear override to kill all Streamlit red primaries ─────── */
+    /* ── Tab bar ────────────────────────────────────────────────────────── */
     div[data-baseweb="tab-list"],
     div[data-testid="stTabBar"] {
         gap: 0 !important;
-        border-bottom: 2px solid var(--rule) !important;
+        border-bottom: 1px solid var(--rule) !important;
         background-color: transparent !important;
+        padding: 0 0.5rem !important;
     }
 
-    /* All tab buttons — unselected state */
     button[data-baseweb="tab"],
     button[data-testid="stTab"],
     button[data-baseweb="tab"]:not([aria-selected="true"]),
     button[data-testid="stTab"]:not([aria-selected="true"]) {
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.78rem !important;
-        font-weight: 600 !important;
-        color: #6B6459 !important;
+        font-size: 0.72rem !important;
+        font-weight: 500 !important;
+        color: var(--ink-muted) !important;
         background-color: transparent !important;
         border: none !important;
         border-bottom: 2px solid transparent !important;
-        padding: 10px 22px !important;
-        letter-spacing: 0.1em !important;
+        padding: 12px 20px !important;
+        letter-spacing: 0.12em !important;
         text-transform: uppercase !important;
         box-shadow: none !important;
         outline: none !important;
         cursor: pointer !important;
-        transition: color 0.15s ease-in-out !important;
+        transition: color 0.2s ease, border-color 0.2s ease !important;
+        margin-bottom: -1px !important;
     }
 
-    /* Kill ALL child element color inheritance from Streamlit's red theme */
     button[data-baseweb="tab"] p,
     button[data-baseweb="tab"] span,
     button[data-baseweb="tab"] div,
@@ -112,264 +127,298 @@ st.markdown("""
         background: transparent !important;
     }
 
-    /* Active / selected tab */
     button[data-baseweb="tab"][aria-selected="true"],
     button[data-testid="stTab"][aria-selected="true"] {
-        color: #201E1B !important;
+        color: var(--ink) !important;
         font-weight: 700 !important;
-        border-bottom: 2px solid #201E1B !important;
+        border-bottom: 2px solid var(--ink) !important;
     }
     button[data-baseweb="tab"][aria-selected="true"] *,
     button[data-testid="stTab"][aria-selected="true"] * {
-        color: #201E1B !important;
+        color: var(--ink) !important;
         font-weight: 700 !important;
     }
 
-    /* Hover state */
     button[data-baseweb="tab"]:hover,
     button[data-testid="stTab"]:hover {
-        color: #201E1B !important;
+        color: var(--ink) !important;
+        border-bottom-color: var(--rule-strong) !important;
     }
     button[data-baseweb="tab"]:hover *,
-    button[data-testid="stTab"]:hover * {
-        color: #201E1B !important;
-    }
+    button[data-testid="stTab"]:hover * { color: var(--ink) !important; }
 
-    /* Hide the Streamlit-managed highlight bar (we use border-bottom on button) */
-    div[data-baseweb="tab-highlight"] {
-        display: none !important;
-    }
-    div[data-baseweb="tab-border"] {
-        display: none !important;
-    }
+    div[data-baseweb="tab-highlight"],
+    div[data-baseweb="tab-border"] { display: none !important; }
 
-    /* ---------------- Letterhead ---------------- */
+    /* ── Letterhead ─────────────────────────────────────────────────────── */
     .letterhead {
         text-align: center;
-        padding: 2.5rem 0 1.75rem 0;
-        border-bottom: 1px solid var(--rule);
-        margin-bottom: 2.5rem;
+        padding: 3.5rem 2rem 2.5rem;
+        margin-bottom: 0;
+        position: relative;
+    }
+    .letterhead-rule {
+        width: 48px;
+        height: 2px;
+        background: var(--accent);
+        margin: 0 auto 1.25rem;
+        border-radius: 1px;
     }
     .eyebrow {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 500;
-        letter-spacing: 0.28em;
+        letter-spacing: 0.3em;
         text-transform: uppercase;
         color: var(--ink-muted);
-        margin-bottom: 0.9rem;
+        margin-bottom: 1rem;
     }
     .masthead {
         font-family: 'Fraunces', serif;
-        font-size: 3.1rem;
+        font-size: clamp(2.5rem, 5vw, 3.5rem);
         font-weight: 600;
         color: var(--ink);
-        letter-spacing: -0.02em;
-        margin-bottom: 0.6rem;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        margin-bottom: 1rem;
     }
     .masthead em {
         color: var(--accent);
         font-style: italic;
-        font-weight: 500;
+        font-weight: 400;
     }
     .deck {
-        font-family: 'Fraunces', serif;
-        font-style: italic;
-        font-size: 1.05rem;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 0.95rem;
         color: var(--ink-muted);
-        max-width: 560px;
-        margin: 0 auto;
-        line-height: 1.65;
-        font-weight: 500;
+        max-width: 520px;
+        margin: 0 auto 2rem;
+        line-height: 1.7;
+        font-weight: 400;
+    }
+    .letterhead-divider {
+        border: none;
+        border-top: 1px solid var(--rule);
+        margin: 0;
     }
 
-    /* ---------------- Exhibit cards (inputs) ---------------- */
+    /* ── Exhibit section labels ─────────────────────────────────────────── */
     .exhibit-label {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.7rem;
+        font-size: 0.62rem;
         font-weight: 600;
-        letter-spacing: 0.18em;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
-        color: var(--ink-muted);
-        margin-bottom: 0.6rem;
-        display: block;
+        color: var(--ink-faint);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .exhibit-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--rule);
     }
 
-    /* Change the red container border to none */
+    /* ── Card containers ────────────────────────────────────────────────── */
     div[data-testid="stVerticalBlockBorderWrapper"],
     div[data-testid="stVerticalBlockBorderWrapper"] > div {
         border: 1px solid var(--rule) !important;
         background-color: var(--surface) !important;
-        border-radius: 6px !important;
-        box-shadow: 0 1px 0 var(--rule), 0 10px 28px -20px rgba(32, 30, 27, 0.4) !important;
-        transition: box-shadow 0.2s ease-in-out !important;
+        border-radius: var(--radius-lg) !important;
+        box-shadow: var(--shadow-sm) !important;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: var(--shadow-md) !important;
+        border-color: var(--rule-strong) !important;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        padding: 0.25rem 0.25rem !important;
+        padding: 0.5rem !important;
     }
 
-    /* Style the Text Area Wrapper and Inner Input */
+    /* ── Textarea ───────────────────────────────────────────────────────── */
     div[data-baseweb="textarea"] {
         border: none !important;
         background: transparent !important;
     }
     div[data-baseweb="textarea"] > div {
-        background-color: var(--surface) !important;
+        background-color: var(--surface-2) !important;
         border: 1px solid var(--rule) !important;
-        border-radius: 6px !important;
-        transition: all 0.15s ease-in-out !important;
+        border-radius: var(--radius-md) !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
     }
-    div[data-baseweb="textarea"]:focus-within > div,
-    div[data-baseweb="textarea"] > div:focus-within,
-    div[data-baseweb="textarea"] div:focus-within,
-    div[data-baseweb="textarea"] *:focus,
-    div[data-baseweb="textarea"] *:focus-within,
-    textarea:focus {
+    div[data-baseweb="textarea"]:focus-within > div {
         border-color: var(--accent) !important;
         box-shadow: 0 0 0 3px var(--accent-soft) !important;
-        outline: none !important;
     }
     textarea {
-        background-color: var(--surface) !important;
-        color: #000000 !important;
+        background-color: var(--surface-2) !important;
+        color: var(--ink) !important;
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.85rem !important;
-        line-height: 1.6 !important;
+        font-size: 0.82rem !important;
+        line-height: 1.65 !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
     }
-    textarea:focus {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    textarea::placeholder { color: #B7AF9F !important; }
+    textarea:focus { border: none !important; outline: none !important; box-shadow: none !important; }
+    textarea::placeholder { color: var(--ink-faint) !important; }
 
-    /* ---------------- Button ---------------- */
+    /* ── Primary buttons ────────────────────────────────────────────────── */
     div.stButton > button {
         background: var(--accent) !important;
-        color: var(--paper) !important;
+        color: #FFFFFF !important;
         border: none !important;
-        border-radius: 4px !important;
-        padding: 0.8rem 2rem !important;
-        font-family: 'IBM Plex Mono', monospace !important;
+        border-radius: var(--radius-md) !important;
+        padding: 0.85rem 2.5rem !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
         font-weight: 600 !important;
-        font-size: 0.78rem !important;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        box-shadow: 0 4px 14px -6px rgba(31, 77, 58, 0.55) !important;
-        transition: background 0.15s ease-in-out, box-shadow 0.15s ease-in-out, transform 0.1s ease-in-out !important;
-        width: 100%;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.02em !important;
+        box-shadow: 0 2px 8px -2px rgba(28, 68, 52, 0.4), 0 1px 3px rgba(28,68,52,0.2) !important;
+        transition: all 0.2s ease !important;
+        width: 100% !important;
     }
     div.stButton > button:hover {
-        background: #163A2B !important;
-        box-shadow: 0 6px 18px -6px rgba(31, 77, 58, 0.65) !important;
+        background: var(--accent-mid) !important;
+        box-shadow: 0 4px 16px -4px rgba(28, 68, 52, 0.5), 0 2px 6px rgba(28,68,52,0.2) !important;
+        transform: translateY(-1px) !important;
     }
-    div.stButton > button:active {
-        transform: translateY(1px);
+    div.stButton > button:active { transform: translateY(0) !important; }
+
+    /* ── Download buttons ───────────────────────────────────────────────── */
+    div[data-testid="stDownloadButton"] > button {
+        background: var(--surface) !important;
+        color: var(--accent) !important;
+        border: 1.5px solid var(--accent) !important;
+        border-radius: var(--radius-md) !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        width: 100% !important;
+        transition: all 0.15s ease !important;
+        padding: 0.6rem 1rem !important;
+    }
+    div[data-testid="stDownloadButton"] > button:hover {
+        background: var(--accent-softer) !important;
     }
 
-    /* ---------------- Report section headers ---------------- */
+    /* ── Report headings ────────────────────────────────────────────────── */
     .report-heading {
         text-align: center;
-        margin: 1rem 0 2rem 0;
+        padding: 1.5rem 0 0.5rem;
     }
     .report-kicker {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.7rem;
-        letter-spacing: 0.28em;
+        font-size: 0.65rem;
+        letter-spacing: 0.3em;
         text-transform: uppercase;
         color: var(--ink-muted);
     }
     .report-title {
         font-family: 'Fraunces', serif;
-        font-size: 1.9rem;
+        font-size: 2rem;
         font-weight: 600;
         color: var(--ink);
-        margin-top: 0.4rem;
+        margin-top: 0.5rem;
+        letter-spacing: -0.02em;
     }
     .section-number {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.72rem;
+        font-size: 0.65rem;
         font-weight: 600;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.2em;
         color: var(--accent);
         text-transform: uppercase;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .section-number::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
+        border-radius: 50%;
     }
 
-    /* ---------------- Ink stamp (score) ---------------- */
+    /* ── ATS Score stamp ────────────────────────────────────────────────── */
     .stamp-wrap {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 100%;
-        padding: 1rem 0;
+        padding: 1.5rem 0;
     }
     .stamp {
-        width: 168px;
-        height: 168px;
+        width: 160px;
+        height: 160px;
         border-radius: 50%;
-        border: 3px double var(--stamp-color, var(--accent));
+        border: 2.5px solid var(--stamp-color, var(--accent));
+        outline: 1px dashed var(--stamp-color, var(--accent));
+        outline-offset: 5px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        transform: rotate(-7deg);
+        transform: rotate(-6deg);
         color: var(--stamp-color, var(--accent));
         font-family: 'IBM Plex Mono', monospace;
-        box-shadow: 0 6px 18px -10px rgba(32, 30, 27, 0.35);
+        background: radial-gradient(ellipse at center, rgba(255,255,255,0.8) 0%, transparent 70%);
     }
     .stamp-score {
-        font-size: 2.6rem;
+        font-size: 2.8rem;
         font-weight: 600;
         line-height: 1;
+        letter-spacing: -0.02em;
     }
     .stamp-verdict {
-        font-size: 0.62rem;
+        font-size: 0.6rem;
         font-weight: 600;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
-        margin-top: 0.35rem;
+        margin-top: 0.4rem;
         text-align: center;
         padding: 0 0.5rem;
     }
 
-    /* ---------------- Flagged terms ---------------- */
+    /* ── Keyword pills ──────────────────────────────────────────────────── */
     .flag-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem 1.1rem;
-        margin-top: 0.5rem;
+        gap: 0.4rem 0.6rem;
+        margin-top: 0.75rem;
     }
     .flag-term {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.82rem;
+        font-size: 0.75rem;
         font-weight: 500;
-        color: var(--flag);
-        border-bottom: 1px dashed var(--flag);
-        padding-bottom: 1px;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        border: 1px solid currentColor;
+        opacity: 0.9;
     }
-    .flag-term::before { content: "▸ "; }
-    .flag-term-technical { color: var(--accent) !important; border-color: var(--accent) !important; }
-    .flag-term-technical::before { content: "▪ " !important; }
-    .flag-term-tools { color: var(--amber) !important; border-color: var(--amber) !important; }
-    .flag-term-tools::before { content: "▪ " !important; }
-    .flag-term-soft { color: var(--flag) !important; border-color: var(--flag) !important; }
-    .flag-term-soft::before { content: "▪ " !important; }
+    .flag-term-technical { color: var(--accent) !important; background: var(--accent-softer) !important; border-color: rgba(28,68,52,0.2) !important; }
+    .flag-term-tools { color: var(--amber) !important; background: var(--amber-soft) !important; border-color: rgba(138,94,18,0.2) !important; }
+    .flag-term-soft { color: var(--flag) !important; background: var(--flag-soft) !important; border-color: rgba(146,47,34,0.2) !important; }
 
-    /* ---------------- Diff rows (bullet revisions) ---------------- */
+    /* ── Diff blocks ────────────────────────────────────────────────────── */
     .diff-block {
         border: 1px solid var(--rule);
-        border-radius: 2px;
+        border-radius: var(--radius-md);
         margin-bottom: 1rem;
         overflow: hidden;
-        font-family: 'IBM Plex Mono', monospace;
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
     }
     .diff-line {
-        padding: 0.7rem 1rem;
-        font-size: 0.82rem;
+        padding: 0.75rem 1rem;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.8rem;
         line-height: 1.55;
         border-left: 3px solid transparent;
     }
@@ -378,99 +427,74 @@ st.markdown("""
         border-left-color: var(--flag);
         color: #7A241B;
         text-decoration: line-through;
-        text-decoration-color: rgba(161, 51, 39, 0.45);
+        text-decoration-color: rgba(146,47,34,0.4);
     }
     .diff-add {
-        background: var(--accent-soft);
+        background: var(--accent-softer);
         border-left-color: var(--accent);
         color: var(--accent);
         font-weight: 500;
     }
     .diff-impact {
-        padding: 0.55rem 1rem;
-        font-size: 0.72rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
         color: var(--ink-muted);
-        background: var(--surface);
-        border-top: 1px dashed var(--rule);
+        background: var(--surface-2);
+        border-top: 1px solid var(--rule);
         font-family: 'IBM Plex Sans', sans-serif;
     }
     .diff-impact b { color: var(--ink); font-weight: 600; }
 
-    div[data-testid="stDownloadButton"] > button {
-        background: var(--surface) !important;
-        color: var(--accent) !important;
-        border: 1px solid var(--accent) !important;
-        border-radius: 4px !important;
-        font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.75rem !important;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        font-weight: 600 !important;
-        width: 100% !important;
-        transition: all 0.15s ease-in-out !important;
-    }
-    div[data-testid="stDownloadButton"] > button:hover {
-        background: var(--accent-soft) !important;
-    }
-
-    /* ---------------- File Uploader Styling (High Contrast & Visible Text) ---------------- */
-    div[data-testid="stFileUploader"] {
-        color: #000000 !important;
-    }
+    /* ── File Uploader ──────────────────────────────────────────────────── */
+    div[data-testid="stFileUploader"] { color: var(--ink) !important; }
     div[data-testid="stFileUploader"] label {
-        color: #000000 !important;
+        color: var(--ink) !important;
         font-family: 'IBM Plex Sans', sans-serif !important;
-        font-size: 0.85rem !important;
+        font-size: 0.82rem !important;
         font-weight: 600 !important;
     }
     section[data-testid="stFileUploaderDropzone"] {
-        background-color: #FFFFFF !important;
-        border: 2px dashed #201E1B !important;
-        border-radius: 4px !important;
-        padding: 15px !important;
+        background-color: var(--surface-2) !important;
+        border: 1.5px dashed var(--rule-strong) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 1.25rem !important;
+        transition: border-color 0.15s ease, background-color 0.15s ease !important;
     }
-    section[data-testid="stFileUploaderDropzone"] p {
-        color: #000000 !important;
-        font-weight: 500 !important;
+    section[data-testid="stFileUploaderDropzone"]:hover {
+        border-color: var(--accent) !important;
+        background-color: var(--accent-softer) !important;
     }
-    section[data-testid="stFileUploaderDropzone"] span {
-        color: #000000 !important;
-    }
-    section[data-testid="stFileUploaderDropzone"] small {
-        color: #302E2B !important;
-        font-weight: 500 !important;
-    }
-    /* Browse files button inside uploader (White background with dark borders and text) */
+    section[data-testid="stFileUploaderDropzone"] p,
+    section[data-testid="stFileUploaderDropzone"] span { color: var(--ink-muted) !important; font-size: 0.82rem !important; }
+    section[data-testid="stFileUploaderDropzone"] small { color: var(--ink-faint) !important; font-size: 0.75rem !important; }
     section[data-testid="stFileUploaderDropzone"] button {
-        background-color: #FFFFFF !important;
-        color: #201E1B !important;
-        border: 1px solid var(--rule) !important;
-        border-radius: 2px !important;
-        padding: 8px 16px !important;
-        font-size: 0.8rem !important;
+        background-color: var(--surface) !important;
+        color: var(--ink) !important;
+        border: 1px solid var(--rule-strong) !important;
+        border-radius: var(--radius-sm) !important;
+        padding: 6px 14px !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-size: 0.78rem !important;
         font-weight: 600 !important;
-        transition: all 0.15s ease-in-out !important;
+        box-shadow: var(--shadow-sm) !important;
+        transition: all 0.15s ease !important;
     }
     section[data-testid="stFileUploaderDropzone"] button:hover {
-        background-color: var(--paper) !important;
         border-color: var(--accent) !important;
         color: var(--accent) !important;
+        background-color: var(--accent-softer) !important;
     }
     div[data-testid="stUploadedFile"] {
-        background-color: var(--surface) !important;
-        border: 1px solid var(--rule) !important;
-        border-radius: 4px !important;
+        background-color: var(--accent-softer) !important;
+        border: 1px solid rgba(28,68,52,0.15) !important;
+        border-radius: var(--radius-sm) !important;
         padding: 4px 10px !important;
     }
     div[data-testid="stUploadedFile"] span,
-    div[data-testid="stUploadedFile"] div {
-        color: var(--ink) !important;
-    }
-    div[data-testid="stUploadedFile"] button {
-        color: var(--flag) !important;
-    }
+    div[data-testid="stUploadedFile"] div { color: var(--ink) !important; }
+    div[data-testid="stUploadedFile"] button { color: var(--flag) !important; }
 
-    /* ---------------- Text Input (URL Scraper) styling ---------------- */
+    /* ── Text input (URL Scraper) ────────────────────────────────────────── */
     div[data-baseweb="input"] {
         border: none !important;
         background: transparent !important;
@@ -478,10 +502,10 @@ st.markdown("""
         box-shadow: none !important;
     }
     div[data-baseweb="input"] > div {
-        background-color: var(--surface) !important;
+        background-color: var(--surface-2) !important;
         border: 1px solid var(--rule) !important;
-        border-radius: 6px !important;
-        transition: all 0.15s ease-in-out !important;
+        border-radius: var(--radius-md) !important;
+        transition: all 0.15s ease !important;
         box-shadow: none !important;
     }
     div[data-baseweb="input"]:focus-within > div,
@@ -489,11 +513,10 @@ st.markdown("""
     div[data-baseweb="input"] div:focus-within {
         border-color: var(--accent) !important;
         box-shadow: 0 0 0 3px var(--accent-soft) !important;
-        outline: none !important;
     }
     input {
-        background-color: var(--surface) !important;
-        color: #000000 !important;
+        background-color: var(--surface-2) !important;
+        color: var(--ink) !important;
         font-family: 'IBM Plex Mono', monospace !important;
         font-size: 0.85rem !important;
         line-height: 1.6 !important;
@@ -501,47 +524,42 @@ st.markdown("""
         outline: none !important;
         box-shadow: none !important;
     }
-    input:focus {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    input::placeholder {
-        color: #70685C !important;
-        opacity: 0.85 !important;
-    }
+    input:focus { border: none !important; outline: none !important; box-shadow: none !important; }
+    input::placeholder { color: var(--ink-faint) !important; }
     div[data-testid="stTextInput"] label p {
         color: var(--ink) !important;
         font-family: 'IBM Plex Sans', sans-serif !important;
-        font-size: 0.85rem !important;
+        font-size: 0.82rem !important;
         font-weight: 600 !important;
     }
 
-    /* ---------------- Streamlit Alert / Notification Box overrides ---------------- */
+    /* ── Alert boxes ────────────────────────────────────────────────────── */
     div[data-testid="stAlert"] {
         background-color: var(--surface) !important;
         color: var(--ink) !important;
         border: 1px solid var(--rule) !important;
-        border-radius: 6px !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
     div[data-testid="stAlert"] p,
     div[data-testid="stAlert"] span,
     div[data-testid="stAlert"] div,
-    div[data-testid="stAlert"] svg {
-        color: var(--ink) !important;
-        fill: var(--ink) !important;
-    }
+    div[data-testid="stAlert"] svg { color: var(--ink) !important; fill: var(--ink) !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- Letterhead ----------------
+# ── Letterhead ───────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="letterhead">
-    <div class="eyebrow">Document Review Report</div>
+    <div class="eyebrow">AI-Powered Resume Intelligence</div>
     <div class="masthead">Resu<em>Match</em></div>
-    <div class="deck">Submit your resume and a target role as exhibits. Gemini reviews the pairing and returns a scored alignment report with flagged gaps, recommended revisions, and customized career roadmaps.</div>
+    <p class="deck">Upload your resume and a target job description. Gemini scores the match, flags keyword gaps, suggests bullet rewrites, generates skill roadmaps, and drafts your cover letter.</p>
 </div>
+<hr class="letterhead-divider">
 """, unsafe_allow_html=True)
+
+
+
 
 # Create workspace tabs
 tab_single, tab_multi, tab_cover = st.tabs([
