@@ -27,7 +27,9 @@ Analyze the following resume and job description. Evaluate their alignment and r
 Return ONLY valid JSON matching this schema:
 {{
   "match_score": int (a percentage score between 0 and 100),
-  "missing_keywords": [list of skills/tools/technologies in the job description but not in the resume],
+  "missing_keywords_technical": [list of core programming languages, frameworks, libraries, or key technical skills in the job description but not in the resume],
+  "missing_keywords_tools": [list of platforms, databases, cloud providers, developer tools, or infrastructure tools in the job description but not in the resume],
+  "missing_keywords_soft": [list of soft skills, team collaboration keywords, or methodologies like Agile/Scrum in the job description but not in the resume],
   "rewritten_bullets": [
     {{
       "original": "A representative weak/generic bullet point from the resume",
@@ -54,6 +56,15 @@ Job Description:
         # Parse the JSON response
         result_text = response.text.strip()
         data = json.loads(result_text)
+        
+        # Populate backward compatibility keys
+        if "missing_keywords" not in data:
+            data["missing_keywords"] = (
+                data.get("missing_keywords_technical", []) +
+                data.get("missing_keywords_tools", []) +
+                data.get("missing_keywords_soft", [])
+            )
+            
         return data
     except Exception as e:
         print(f"Error during Gemini match analysis: {e}")
