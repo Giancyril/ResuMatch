@@ -1,5 +1,8 @@
 import os
 import json
+import warnings
+# Suppress the generativeai deprecation warning to keep clean console logs
+warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
 import google.generativeai as genai
 from dotenv import load_dotenv
 
