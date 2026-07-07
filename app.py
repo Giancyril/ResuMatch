@@ -65,61 +65,82 @@ st.markdown("""
     ::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
 
-    /* Style Streamlit Tabs */
+    /* ── Tabs: nuclear override to kill all Streamlit red primaries ─────── */
     div[data-baseweb="tab-list"],
     div[data-testid="stTabBar"] {
-        gap: 4px !important;
-        border-bottom: 1px solid var(--rule) !important;
+        gap: 0 !important;
+        border-bottom: 2px solid var(--rule) !important;
         background-color: transparent !important;
     }
+
+    /* All tab buttons — unselected state */
     button[data-baseweb="tab"],
-    button[data-testid="stTab"] {
+    button[data-testid="stTab"],
+    button[data-baseweb="tab"]:not([aria-selected="true"]),
+    button[data-testid="stTab"]:not([aria-selected="true"]) {
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.8rem !important;
+        font-size: 0.78rem !important;
         font-weight: 600 !important;
-        color: var(--ink-muted) !important;
+        color: #6B6459 !important;
         background-color: transparent !important;
         border: none !important;
-        padding: 10px 20px !important;
-        letter-spacing: 0.08em !important;
+        border-bottom: 2px solid transparent !important;
+        padding: 10px 22px !important;
+        letter-spacing: 0.1em !important;
         text-transform: uppercase !important;
         box-shadow: none !important;
         outline: none !important;
+        cursor: pointer !important;
+        transition: color 0.15s ease-in-out !important;
     }
-    /* Inner text node of the tab (Streamlit wraps the label in its own span/p,
-       which otherwise keeps the framework's default red) */
+
+    /* Kill ALL child element color inheritance from Streamlit's red theme */
+    button[data-baseweb="tab"] p,
+    button[data-baseweb="tab"] span,
+    button[data-baseweb="tab"] div,
     button[data-baseweb="tab"] *,
+    button[data-testid="stTab"] p,
+    button[data-testid="stTab"] span,
+    button[data-testid="stTab"] div,
     button[data-testid="stTab"] * {
-        color: var(--ink-muted) !important;
+        color: inherit !important;
         font-family: inherit !important;
         font-size: inherit !important;
         font-weight: inherit !important;
         letter-spacing: inherit !important;
         text-transform: inherit !important;
+        background: transparent !important;
     }
+
+    /* Active / selected tab */
     button[data-baseweb="tab"][aria-selected="true"],
+    button[data-testid="stTab"][aria-selected="true"] {
+        color: #201E1B !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid #201E1B !important;
+    }
     button[data-baseweb="tab"][aria-selected="true"] *,
-    button[data-testid="stTab"][aria-selected="true"],
     button[data-testid="stTab"][aria-selected="true"] * {
-        color: var(--ink) !important;
+        color: #201E1B !important;
         font-weight: 700 !important;
     }
+
+    /* Hover state */
     button[data-baseweb="tab"]:hover,
-    button[data-baseweb="tab"]:hover *,
-    button[data-testid="stTab"]:hover,
-    button[data-testid="stTab"]:hover * {
-        color: var(--ink) !important;
+    button[data-testid="stTab"]:hover {
+        color: #201E1B !important;
     }
-    /* The active-tab indicator bar is a separate element positioned by
-       Streamlit/BaseWeb and inherits the app's red primary color unless
-       explicitly overridden here. */
-    div[data-baseweb="tab-highlight"],
-    div[data-testid="stTabBar"] > div {
-        background-color: var(--ink) !important;
-        height: 2px !important;
+    button[data-baseweb="tab"]:hover *,
+    button[data-testid="stTab"]:hover * {
+        color: #201E1B !important;
+    }
+
+    /* Hide the Streamlit-managed highlight bar (we use border-bottom on button) */
+    div[data-baseweb="tab-highlight"] {
+        display: none !important;
     }
     div[data-baseweb="tab-border"] {
-        background-color: var(--rule) !important;
+        display: none !important;
     }
 
     /* ---------------- Letterhead ---------------- */
