@@ -504,3 +504,21 @@ if analyze_clicked:
 
             except Exception as ex:
                 st.error(f"Review could not be filed. Error details: {ex}")
+
+# ----------------- Version History Comparison Panel -----------------
+if st.session_state.history:
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown('<div class="section-number">04 — Version Analysis Log</div>', unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1rem;'>Compare alignment metrics across consecutive runs to track ATS score improvements:</p>", unsafe_allow_html=True)
+        
+        cols = st.columns(len(st.session_state.history))
+        for idx, run in enumerate(st.session_state.history):
+            with cols[idx]:
+                st.markdown(f"""
+                <div style="border: 1px solid var(--rule); border-radius: 4px; padding: 0.75rem; text-align: center; background-color: var(--paper);">
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--ink-muted);">{run['version']}</div>
+                    <div style="font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 600; color: var(--accent); margin: 0.25rem 0;">{run['score']}%</div>
+                    <div style="font-size: 0.75rem; color: var(--ink-muted);">Gaps: {run['gaps']} | Bullet Revisions: {run['bullets']}</div>
+                </div>
+                """, unsafe_allow_html=True)
