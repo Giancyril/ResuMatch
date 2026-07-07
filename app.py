@@ -66,29 +66,66 @@ st.markdown("""
     ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
 
     /* Style Streamlit Tabs */
-    button[data-baseweb="tab"] {
+    div[data-baseweb="tab-list"],
+    div[data-testid="stTabBar"] {
+        gap: 4px !important;
+        border-bottom: 1px solid var(--rule) !important;
+        background-color: transparent !important;
+    }
+    button[data-baseweb="tab"],
+    button[data-testid="stTab"] {
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.85rem !important;
+        font-size: 0.8rem !important;
         font-weight: 600 !important;
         color: var(--ink-muted) !important;
         background-color: transparent !important;
         border: none !important;
         padding: 10px 20px !important;
-        letter-spacing: 0.05em !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase !important;
+        box-shadow: none !important;
+        outline: none !important;
     }
-    button[data-baseweb="tab"][aria-selected="true"] {
-        color: var(--accent) !important;
-        border-bottom: 2px solid var(--accent) !important;
+    /* Inner text node of the tab (Streamlit wraps the label in its own span/p,
+       which otherwise keeps the framework's default red) */
+    button[data-baseweb="tab"] *,
+    button[data-testid="stTab"] * {
+        color: var(--ink-muted) !important;
+        font-family: inherit !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        letter-spacing: inherit !important;
+        text-transform: inherit !important;
     }
-    button[data-baseweb="tab"]:hover {
-        color: var(--accent) !important;
+    button[data-baseweb="tab"][aria-selected="true"],
+    button[data-baseweb="tab"][aria-selected="true"] *,
+    button[data-testid="stTab"][aria-selected="true"],
+    button[data-testid="stTab"][aria-selected="true"] * {
+        color: var(--ink) !important;
+        font-weight: 700 !important;
+    }
+    button[data-baseweb="tab"]:hover,
+    button[data-baseweb="tab"]:hover *,
+    button[data-testid="stTab"]:hover,
+    button[data-testid="stTab"]:hover * {
+        color: var(--ink) !important;
+    }
+    /* The active-tab indicator bar is a separate element positioned by
+       Streamlit/BaseWeb and inherits the app's red primary color unless
+       explicitly overridden here. */
+    div[data-baseweb="tab-highlight"],
+    div[data-testid="stTabBar"] > div {
+        background-color: var(--ink) !important;
+        height: 2px !important;
+    }
+    div[data-baseweb="tab-border"] {
+        background-color: var(--rule) !important;
     }
 
     /* ---------------- Letterhead ---------------- */
     .letterhead {
         text-align: center;
-        padding: 2.75rem 0 1.5rem 0;
+        padding: 2.5rem 0 1.75rem 0;
         border-bottom: 1px solid var(--rule);
         margin-bottom: 2.5rem;
     }
@@ -140,10 +177,14 @@ st.markdown("""
     /* Change the red container border to none */
     div[data-testid="stVerticalBlockBorderWrapper"],
     div[data-testid="stVerticalBlockBorderWrapper"] > div {
-        border: none !important;
+        border: 1px solid var(--rule) !important;
         background-color: var(--surface) !important;
-        border-radius: 2px !important;
-        box-shadow: 0 1px 0 var(--rule), 0 8px 24px -18px rgba(32, 30, 27, 0.35) !important;
+        border-radius: 6px !important;
+        box-shadow: 0 1px 0 var(--rule), 0 10px 28px -20px rgba(32, 30, 27, 0.4) !important;
+        transition: box-shadow 0.2s ease-in-out !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.25rem 0.25rem !important;
     }
 
     /* Style the Text Area Wrapper and Inner Input */
@@ -154,7 +195,7 @@ st.markdown("""
     div[data-baseweb="textarea"] > div {
         background-color: var(--surface) !important;
         border: 1px solid var(--rule) !important;
-        border-radius: 4px !important;
+        border-radius: 6px !important;
         transition: all 0.15s ease-in-out !important;
     }
     div[data-baseweb="textarea"]:focus-within > div,
@@ -164,7 +205,7 @@ st.markdown("""
     div[data-baseweb="textarea"] *:focus-within,
     textarea:focus {
         border-color: var(--accent) !important;
-        box-shadow: 0 0 0 1px var(--accent) !important;
+        box-shadow: 0 0 0 3px var(--accent-soft) !important;
         outline: none !important;
     }
     textarea {
@@ -173,6 +214,14 @@ st.markdown("""
         font-family: 'IBM Plex Mono', monospace !important;
         font-size: 0.85rem !important;
         line-height: 1.6 !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    textarea:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
     textarea::placeholder { color: #B7AF9F !important; }
 
@@ -181,18 +230,23 @@ st.markdown("""
         background: var(--accent) !important;
         color: var(--paper) !important;
         border: none !important;
-        border-radius: 2px !important;
+        border-radius: 4px !important;
         padding: 0.8rem 2rem !important;
         font-family: 'IBM Plex Mono', monospace !important;
         font-weight: 600 !important;
         font-size: 0.78rem !important;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        transition: background 0.15s ease-in-out !important;
+        box-shadow: 0 4px 14px -6px rgba(31, 77, 58, 0.55) !important;
+        transition: background 0.15s ease-in-out, box-shadow 0.15s ease-in-out, transform 0.1s ease-in-out !important;
         width: 100%;
     }
     div.stButton > button:hover {
         background: #163A2B !important;
+        box-shadow: 0 6px 18px -6px rgba(31, 77, 58, 0.65) !important;
+    }
+    div.stButton > button:active {
+        transform: translateY(1px);
     }
 
     /* ---------------- Report section headers ---------------- */
@@ -244,6 +298,7 @@ st.markdown("""
         transform: rotate(-7deg);
         color: var(--stamp-color, var(--accent));
         font-family: 'IBM Plex Mono', monospace;
+        box-shadow: 0 6px 18px -10px rgba(32, 30, 27, 0.35);
     }
     .stamp-score {
         font-size: 2.6rem;
@@ -324,13 +379,17 @@ st.markdown("""
         background: var(--surface) !important;
         color: var(--accent) !important;
         border: 1px solid var(--accent) !important;
-        border-radius: 2px !important;
+        border-radius: 4px !important;
         font-family: 'IBM Plex Mono', monospace !important;
         font-size: 0.75rem !important;
         letter-spacing: 0.1em;
         text-transform: uppercase;
         font-weight: 600 !important;
         width: 100% !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+    div[data-testid="stDownloadButton"] > button:hover {
+        background: var(--accent-soft) !important;
     }
 
     /* ---------------- File Uploader Styling (High Contrast & Visible Text) ---------------- */
@@ -394,21 +453,21 @@ st.markdown("""
     div[data-baseweb="input"] {
         border: none !important;
         background: transparent !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
     div[data-baseweb="input"] > div {
         background-color: var(--surface) !important;
         border: 1px solid var(--rule) !important;
-        border-radius: 4px !important;
+        border-radius: 6px !important;
         transition: all 0.15s ease-in-out !important;
+        box-shadow: none !important;
     }
     div[data-baseweb="input"]:focus-within > div,
     div[data-baseweb="input"] > div:focus-within,
-    div[data-baseweb="input"] div:focus-within,
-    div[data-baseweb="input"] *:focus,
-    div[data-baseweb="input"] *:focus-within,
-    input:focus {
+    div[data-baseweb="input"] div:focus-within {
         border-color: var(--accent) !important;
-        box-shadow: 0 0 0 1px var(--accent) !important;
+        box-shadow: 0 0 0 3px var(--accent-soft) !important;
         outline: none !important;
     }
     input {
@@ -417,6 +476,14 @@ st.markdown("""
         font-family: 'IBM Plex Mono', monospace !important;
         font-size: 0.85rem !important;
         line-height: 1.6 !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    input:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
     input::placeholder {
         color: #70685C !important;
@@ -427,6 +494,21 @@ st.markdown("""
         font-family: 'IBM Plex Sans', sans-serif !important;
         font-size: 0.85rem !important;
         font-weight: 600 !important;
+    }
+
+    /* ---------------- Streamlit Alert / Notification Box overrides ---------------- */
+    div[data-testid="stAlert"] {
+        background-color: var(--surface) !important;
+        color: var(--ink) !important;
+        border: 1px solid var(--rule) !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="stAlert"] p,
+    div[data-testid="stAlert"] span,
+    div[data-testid="stAlert"] div,
+    div[data-testid="stAlert"] svg {
+        color: var(--ink) !important;
+        fill: var(--ink) !important;
     }
 </style>
 """, unsafe_allow_html=True)
