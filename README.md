@@ -12,7 +12,11 @@ A production-grade, AI-augmented resume tailoring and applicant tracking system 
 - **Version Analysis History**: Keep track of ATS compatibility score gains across consecutive runs to benchmark progress.
 - **Interview Prep Assistant**: Formulate targeted interview questions focused on resolving identified technical gap areas.
 - **JSON Exporter**: Export report diagnostics as both clean raw JSON and readable plain text files.
-- **Premium Glassmorphic Interface**: Dark space-themed UI crafted with customized Streamlit overrides and layout grids.
+- **Premium Glassmorphic Interface**: Elegant, premium off-white paper and green-accented design with full contrast controls.
+- **Cover Letter Generator**: Generates a tailored cover letter using the same resume + JD inputs with matching tone and keywords. One extra Gemini prompt, zero new dependencies.
+- **Multi-Resume Comparison**: Upload 2–3 resume versions and compare their ATS scores against the same JD side by side to help pick the strongest version.
+- **Job Description Scraper**: Paste a LinkedIn, Indeed, Lever, Greenhouse, or generic job posting URL to scrape the JD automatically using BeautifulSoup, removing copy-paste friction.
+- **Skill Roadmap Generator**: For each identified keyword gap, generate a tailored "how to close this gap" plan outlining recommended courses, certifications, or projects.
 
 ---
 
@@ -20,6 +24,7 @@ A production-grade, AI-augmented resume tailoring and applicant tracking system 
 
 - **Frontend/UI**: Streamlit (Python-native web dashboard framework).
 - **LLM/AI Model**: Google Gemini API (`gemini-2.5-flash`) utilizing structured JSON generation.
+- **Web Scraping**: BeautifulSoup4 & Requests.
 - **Environment**: Python 3.10+ and `python-dotenv`.
 
 ---
@@ -30,6 +35,8 @@ A production-grade, AI-augmented resume tailoring and applicant tracking system 
 ai-resume-job-match-analyzer/
 ├── app.py                 # Streamlit UI application dashboard
 ├── gemini_service.py      # Google Gemini client integration service
+├── scraper.py             # BeautifulSoup & requests job web scraper
+├── utils.py               # PDF and file parsing helpers
 ├── requirements.txt       # Project python dependencies list
 ├── .env                   # Environment secrets config (Git ignored)
 ├── .gitignore             # Git exclusion rules file
@@ -50,14 +57,18 @@ graph TD
     subgraph Service ["AI Matcher Service"]
         GeminiService["Gemini Service module (gemini_service.py)"]
         GenAI["Google GenerativeAI SDK"]
+        Scraper["BeautifulSoup Scraper (scraper.py)"]
     end
 
     subgraph External ["External Resource Core"]
         Gemini[(Google Gemini AI Studio)]
+        JobBoard["Job Board Webpage (HTTP requests)"]
     end
 
     Dashboard --> Inputs
     Inputs --> GeminiService
+    Dashboard -- paste URL --> Scraper
+    Scraper --> JobBoard
     GeminiService --> GenAI
     GenAI --> Gemini
     Gemini --> GenAI
