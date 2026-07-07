@@ -8,7 +8,10 @@ A production-grade, AI-augmented resume tailoring and applicant tracking system 
 - **Technical Keyword Extraction**: Performs conceptual gap analysis between resumes and JDs to extract missing tools, frameworks, and methodologies.
 - **Tailored Bullet Upgrade Engine**: Generates 3–5 high-impact, results-driven resume bullet points matching the targeted job's syntax and scope.
 - **ATS Impact Explanations**: Details the recruitment rationale and keyword integration value behind each recommended rewrite.
-- **One-Click Reports**: Download full compatibility analysis as a text report locally.
+- **File Upload Parsing**: Upload `.pdf` or `.txt` resumes and job description files directly.
+- **Version Analysis History**: Keep track of ATS compatibility score gains across consecutive runs to benchmark progress.
+- **Interview Prep Assistant**: Formulate targeted interview questions focused on resolving identified technical gap areas.
+- **JSON Exporter**: Export report diagnostics as both clean raw JSON and readable plain text files.
 - **Premium Glassmorphic Interface**: Dark space-themed UI crafted with customized Streamlit overrides and layout grids.
 
 ---
