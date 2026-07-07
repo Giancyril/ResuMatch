@@ -466,6 +466,22 @@ if analyze_clicked:
                                 unsafe_allow_html=True
                             )
 
+                # Generate interview questions using missing keyword information
+                st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+                with st.container(border=True):
+                    st.markdown('<div class="section-number">02.5 — Custom Interview Prep</div>', unsafe_allow_html=True)
+                    st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.25rem;'>Targeted questions covering your identified keyword gaps:</p>", unsafe_allow_html=True)
+                    
+                    gap_sample = missing_keywords[:3] if missing_keywords else ["Technical Skills"]
+                    for idx, gap in enumerate(gap_sample):
+                        st.markdown(f"""
+                        <div style="border-left: 2px solid var(--amber); padding-left: 10px; margin-bottom: 1rem;">
+                            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 700; color: var(--amber); text-transform: uppercase;">Question {idx+1}:</span>
+                            <p style="font-size: 0.85rem; color: var(--ink); margin: 2px 0 0 0; font-weight: 500;">"Can you provide an example of a project where you utilized {gap} to solve a complex engineering constraint?"</p>
+                            <p style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px;"><b>Suggested Strategy:</b> Frame your response using the STAR method. Describe the situation, highlight why {gap} was critical, and mention positive results.</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
                 st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
                 with st.container(border=True):
                     st.markdown('<div class="section-number">03 — Recommended Revisions</div>', unsafe_allow_html=True)
