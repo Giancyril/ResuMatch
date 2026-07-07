@@ -9,6 +9,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Initialize Session State Version Comparison History
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 # ---------------------------------------------------------------------------
 # Design system: "Document Review Report"
 # A resume and job description are treated as exhibits in a formal review.
