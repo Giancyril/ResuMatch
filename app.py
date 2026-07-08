@@ -1041,3 +1041,211 @@ with tab_cover:
             
             st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--ink-muted); margin-top: 1.5rem; margin-bottom: 0.5rem;'>Raw Copy Preview:</p>", unsafe_allow_html=True)
             st.code(st.session_state.cover_letter, language="text")
+
+# ---------------------------------------------------------------------------
+# Tab 4: LinkedIn Profile Optimizer
+# ---------------------------------------------------------------------------
+with tab_linkedin:
+    st.markdown('<div class="section-number">LinkedIn Profile Optimizer</div>', unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Transform your tailored resume bullets and job description into an optimized LinkedIn <b>About</b> section and <b>Experience</b> section — formatted for LinkedIn's character limits and professional conventions.</p>", unsafe_allow_html=True)
+
+    if not st.session_state.resume_text_state.strip() or not st.session_state.jd_text_state.strip():
+        st.warning("Please upload/paste both your Resume and Job Description in the 'Single Resume Review' tab first.")
+    else:
+        has_bullets = bool(st.session_state.last_rewritten_bullets)
+        if not has_bullets:
+            st.info("💡 Run the Resume Review analysis first to generate tailored bullets — they'll be used to power the LinkedIn optimization.")
+
+        st.markdown("<div style='max-width: 260px; margin: 1rem 0;'>", unsafe_allow_html=True)
+        run_linkedin_opt = st.button("Optimize LinkedIn Profile", key="run_linkedin_opt")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if run_linkedin_opt:
+            with st.spinner("Reformatting your profile for LinkedIn conventions…"):
+                try:
+                    li_result = optimize_linkedin_profile(
+                        st.session_state.resume_text_state,
+                        st.session_state.jd_text_state,
+                        st.session_state.last_rewritten_bullets
+                    )
+                    st.session_state.linkedin_result = li_result
+                    st.success("LinkedIn profile sections generated!")
+                except Exception as e:
+                    st.error(f"Failed to optimize: {e}")
+
+        if st.session_state.linkedin_result:
+            li = st.session_state.linkedin_result
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+
+            li_col1, li_col2 = st.columns(2)
+
+            with li_col1:
+                with st.container(border=True):
+                    st.markdown('<div class="section-number">About Section</div>', unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size: 0.72rem; color: var(--ink-faint); font-family: monospace; margin-bottom: 0.5rem;'>Character count: {len(li.get('about',''))}/2000</p>", unsafe_allow_html=True)
+                    edited_about = st.text_area(
+                        "LinkedIn About",
+                        value=li.get("about", ""),
+                        height=340,
+                        label_visibility="collapsed",
+                        key="li_about_area"
+                    )
+                    st.download_button(
+                        "Download About (.txt)",
+                        data=edited_about,
+                        file_name="linkedin_about.txt",
+                        mime="text/plain",
+                        key="dl_li_about"
+                    )
+
+            with li_col2:
+                with st.container(border=True):
+                    st.markdown('<div class="section-number">Experience Section</div>', unsafe_allow_html=True)
+                    edited_exp = st.text_area(
+                        "LinkedIn Experience",
+                        value=li.get("experience", ""),
+                        height=340,
+                        label_visibility="collapsed",
+                        key="li_exp_area"
+                    )
+                    st.download_button(
+                        "Download Experience (.txt)",
+                        data=edited_exp,
+                        file_name="linkedin_experience.txt",
+                        mime="text/plain",
+                        key="dl_li_exp"
+                    )
+
+# ---------------------------------------------------------------------------
+# Tab 5: Salary Estimator
+# ---------------------------------------------------------------------------
+with tab_salary:
+    st.markdown('<div class="section-number">Salary Estimator</div>', unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Get an AI-powered compensation range estimate for this role — broken down by seniority level, with notes on high-value skills and location impact.</p>", unsafe_allow_html=True)
+
+    if not st.session_state.jd_text_state.strip():
+        st.warning("Please paste a Job Description in the 'Single Resume Review' tab first.")
+    else:
+        salary_col1, salary_col2 = st.columns([2, 1])
+        with salary_col1:
+            job_title_input = st.text_input(
+                "Job Title (optional — extracted from JD if left blank)",
+                placeholder="e.g. Senior Software Engineer",
+                key="salary_job_title"
+            )
+        with salary_col2:
+            st.markdown("<div style='margin-top: 1.75rem;'>", unsafe_allow_html=True)
+            run_salary = st.button("Estimate Salary", key="run_salary_btn")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        if run_salary:
+            with st.spinner("Benchmarking compensation data…"):
+                try:
+                    all_skills = (
+                        [b.get("rewritten", "") for b in st.session_state.last_rewritten_bullets]
+                        if st.session_state.last_rewritten_bullets
+                        else []
+                    )
+                    sal = estimate_salary(
+                        job_title=job_title_input or "Not specified",
+                        skills_list=all_skills,
+                        job_desc=st.session_state.jd_text_state
+                    )
+                    st.session_state.salary_result = sal
+                    st.success("Compensation estimate ready!")
+                except Exception as e:
+                    st.error(f"Estimation failed: {e}")
+
+        if st.session_state.salary_result:
+            sal = st.session_state.salary_result
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+
+            with st.container(border=True):
+                st.markdown(f"<div class='section-number'>Role: {sal.get('job_title', 'N/A')} &nbsp;·&nbsp; {sal.get('currency', 'USD')}</div>", unsafe_allow_html=True)
+
+                s_col1, s_col2, s_col3 = st.columns(3)
+                tiers = [
+                    ("Entry Level", "entry_level", "0–2 yrs"),
+                    ("Mid Level",   "mid_level",   "3–5 yrs"),
+                    ("Senior",      "senior_level", "5+ yrs"),
+                ]
+                for col, (label, key, exp) in zip([s_col1, s_col2, s_col3], tiers):
+                    with col:
+                        tier = sal.get(key, {})
+                        lo = f"${tier.get('min', 0):,}"
+                        hi = f"${tier.get('max', 0):,}"
+                        st.markdown(f"""
+                        <div style="border: 1px solid var(--rule); border-radius: 8px; padding: 1rem; text-align: center; background: var(--surface);">
+                            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted);">{label} · {exp}</div>
+                            <div style="font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; color: var(--accent); margin: 0.4rem 0;">{lo} – {hi}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                if sal.get("high_value_skills"):
+                    st.markdown("<div style='margin-top: 1.25rem;'></div>", unsafe_allow_html=True)
+                    pills = "".join([f'<span class="flag-term flag-term-technical">{s}</span>' for s in sal["high_value_skills"]])
+                    st.markdown(f"<p style='font-size: 0.8rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem;'>💰 High-value skills that boost comp:</p><div class='flag-list'>{pills}</div>", unsafe_allow_html=True)
+
+                if sal.get("location_note"):
+                    st.markdown(f"<p style='font-size: 0.82rem; color: var(--ink-muted); margin-top: 1rem;'>📍 <b>Location:</b> {sal['location_note']}</p>", unsafe_allow_html=True)
+                if sal.get("source_note"):
+                    st.markdown(f"<p style='font-size: 0.75rem; color: var(--ink-faint); margin-top: 0.25rem;'>📊 {sal['source_note']}</p>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Tab 6: Cold Email / Recruiter Outreach Generator
+# ---------------------------------------------------------------------------
+with tab_email:
+    st.markdown('<div class="section-number">Cold Email Generator</div>', unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Generate a short, punchy, and personalized cold email to a recruiter — referencing the specific role and your strongest matching skills.</p>", unsafe_allow_html=True)
+
+    if not st.session_state.resume_text_state.strip() or not st.session_state.jd_text_state.strip():
+        st.warning("Please upload/paste both your Resume and Job Description in the 'Single Resume Review' tab first.")
+    else:
+        email_name = st.text_input(
+            "Your Name (optional)",
+            placeholder="e.g. Jane Smith",
+            key="cold_email_name"
+        )
+
+        st.markdown("<div style='max-width: 260px; margin: 1rem 0;'>", unsafe_allow_html=True)
+        run_cold_email = st.button("Generate Cold Email", key="run_cold_email_btn")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if run_cold_email:
+            with st.spinner("Crafting your personalized recruiter outreach…"):
+                try:
+                    email_text = generate_cold_email(
+                        st.session_state.resume_text_state,
+                        st.session_state.jd_text_state,
+                        user_name=email_name
+                    )
+                    st.session_state.cold_email = email_text
+                    st.success("Cold email drafted!")
+                except Exception as e:
+                    st.error(f"Failed to generate email: {e}")
+
+        if st.session_state.cold_email:
+            st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            with st.container(border=True):
+                st.markdown('<div class="section-number">Draft Outreach Email</div>', unsafe_allow_html=True)
+                edited_email = st.text_area(
+                    "Edit your cold email",
+                    value=st.session_state.cold_email,
+                    height=320,
+                    label_visibility="collapsed",
+                    key="cold_email_text_area"
+                )
+                st.session_state.cold_email = edited_email
+
+                em_col1, em_col2 = st.columns([1, 3])
+                with em_col1:
+                    st.download_button(
+                        "Download Email (.txt)",
+                        data=st.session_state.cold_email,
+                        file_name="recruiter_cold_email.txt",
+                        mime="text/plain",
+                        key="dl_cold_email"
+                    )
+
+            st.markdown("<p style='font-size: 0.8rem; font-weight: 600; color: var(--ink-muted); margin-top: 1.5rem; margin-bottom: 0.5rem;'>Raw Copy Preview:</p>", unsafe_allow_html=True)
+            st.code(st.session_state.cold_email, language="text")
