@@ -845,6 +845,18 @@ with tab_single:
             st.markdown('<div class="section-number">04 — Version Analysis Log</div>', unsafe_allow_html=True)
             st.markdown("<p style='font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1rem;'>Compare alignment metrics across consecutive runs to track ATS score improvements:</p>", unsafe_allow_html=True)
             
+            # Feature 1: ATS Score Progression Line Chart
+            try:
+                import pandas as pd
+                df_chart = pd.DataFrame([
+                    {"Version": run["version"], "Score (%)": run["score"]}
+                    for run in st.session_state.history
+                ])
+                st.line_chart(df_chart.set_index("Version"), height=200, color="#1C4434")
+                st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Could not render score chart: {e}")
+            
             cols = st.columns(len(st.session_state.history))
             for idx, run in enumerate(st.session_state.history):
                 with cols[idx]:
