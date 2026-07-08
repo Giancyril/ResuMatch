@@ -1,6 +1,6 @@
 # ResuMatch (AI Resume & Job Match Analyzer)
 
-A production-grade, AI-augmented resume tailoring and applicant tracking system (ATS) optimization engine built on top of Python, Streamlit, and Google Gemini. Features intelligent keyword gap analysis, structural match scoring, and automated resume bullet point transformation.
+A production-grade, AI-augmented resume tailoring and applicant tracking system (ATS) optimization engine built on top of Python, Streamlit, and Google Gemini. Features intelligent keyword gap analysis, structural match scoring, automated resume bullet point transformation, LinkedIn profile optimization, salary estimation, and personalized recruiter outreach generation — all powered by a single Gemini API key with zero extra external dependencies.
 
 ## Features
 
@@ -17,6 +17,10 @@ A production-grade, AI-augmented resume tailoring and applicant tracking system 
 - **Multi-Resume Comparison**: Upload 2–3 resume versions and compare their ATS scores against the same JD side by side to help pick the strongest version.
 - **Job Description Scraper**: Paste a LinkedIn, Indeed, Lever, Greenhouse, or generic job posting URL to scrape the JD automatically using BeautifulSoup, removing copy-paste friction.
 - **Skill Roadmap Generator**: For each identified keyword gap, generate a tailored "how to close this gap" plan outlining recommended courses, certifications, or projects.
+- **Resume Score History Chart**: Visualizes ATS score progression across consecutive analysis runs as a line chart using `st.line_chart` — zero extra dependencies.
+- **LinkedIn Profile Optimizer**: Reformats tailored resume bullet points into LinkedIn-ready `About` and `Experience` sections, respecting LinkedIn's character limits and professional conventions.
+- **Salary Estimator**: Given the job title and extracted skills, uses Gemini to produce a realistic compensation range breakdown by seniority (Entry / Mid / Senior), with notes on high-value skills and location variance.
+- **Cold Email / Recruiter Outreach Generator**: Generates a short, personalized cold email to a recruiter referencing the specific JD and the candidate's strongest matching skills, ready to copy or download.
 
 ---
 

@@ -12,7 +12,7 @@ from utils import extract_text_from_pdf
 
 # Page Configuration
 st.set_page_config(
-    page_title="ResuMatch — Resume Review Report",
+    page_title="ResuMatch",
     page_icon="📄",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -1047,7 +1047,7 @@ with tab_cover:
 # ---------------------------------------------------------------------------
 with tab_linkedin:
     st.markdown('<div class="section-number">LinkedIn Profile Optimizer</div>', unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Transform your tailored resume bullets and job description into an optimized LinkedIn <b>About</b> section and <b>Experience</b> section — formatted for LinkedIn's character limits and professional conventions.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Transform your tailored resume bullets and job description into an optimized LinkedIn <b>About</b> section and <b>Experience</b> section formatted for LinkedIn's character limits and professional conventions.</p>", unsafe_allow_html=True)
 
     if not st.session_state.resume_text_state.strip() or not st.session_state.jd_text_state.strip():
         st.warning("Please upload/paste both your Resume and Job Description in the 'Single Resume Review' tab first.")
@@ -1121,7 +1121,7 @@ with tab_linkedin:
 # ---------------------------------------------------------------------------
 with tab_salary:
     st.markdown('<div class="section-number">Salary Estimator</div>', unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Get an AI-powered compensation range estimate for this role — broken down by seniority level, with notes on high-value skills and location impact.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Get an AI-powered compensation range estimate for this role broken down by seniority level, with notes on high-value skills and location impact.</p>", unsafe_allow_html=True)
 
     if not st.session_state.jd_text_state.strip():
         st.warning("Please paste a Job Description in the 'Single Resume Review' tab first.")
@@ -1196,7 +1196,7 @@ with tab_salary:
 # ---------------------------------------------------------------------------
 with tab_email:
     st.markdown('<div class="section-number">Cold Email Generator</div>', unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Generate a short, punchy, and personalized cold email to a recruiter — referencing the specific role and your strongest matching skills.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 1.5rem;'>Generate a short, punchy, and personalized cold email to a recruiter referencing the specific role and your strongest matching skills.</p>", unsafe_allow_html=True)
 
     if not st.session_state.resume_text_state.strip() or not st.session_state.jd_text_state.strip():
         st.warning("Please upload/paste both your Resume and Job Description in the 'Single Resume Review' tab first.")
