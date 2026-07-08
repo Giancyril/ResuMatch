@@ -114,3 +114,134 @@ Job Description:
     except Exception as e:
         print(f"Error during Gemini cover letter generation: {e}")
         raise e
+
+def optimize_linkedin_profile(resume_text, job_desc, rewritten_bullets_list):
+    """
+    Optimize LinkedIn profile sections based on resume, job description, and tailored bullets.
+    Returns a dict with 'about' and 'experience' sections formatted for LinkedIn.
+    """
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY is not set. Please check your .env file.")
+
+    bullets_json = json.dumps(rewritten_bullets_list, indent=2)
+
+    prompt = f"""You are a professional LinkedIn branding expert.
+Optimize the following user's LinkedIn profile sections based on their Resume, target Job Description, and their upgraded resume bullet points.
+
+Create two distinct sections tailored for LinkedIn's unique format, character limits, and conventions:
+1. LinkedIn "About" (Summary) Section: A compelling, story-driven, first-person summary. Integrate key skills, achievements, and target keywords. Keep it under 2,000 characters.
+2. LinkedIn "Experience" Section: Take the upgraded bullet points and reformat them into high-impact LinkedIn experience descriptions (using first-person or action-oriented phrases, clean formatting, and clear metric/impact callouts suitable for a professional online profile).
+
+Return ONLY valid JSON matching this schema:
+{{
+  "about": "Compelling LinkedIn About section draft...",
+  "experience": "Upgraded LinkedIn Experience section bullets/text..."
+}}
+
+Resume:
+{resume_text}
+
+Job Description:
+{job_desc}
+
+Upgraded Bullets:
+{bullets_json}
+"""
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        return json.loads(response.text.strip())
+    except Exception as e:
+        print(f"Error during LinkedIn profile optimization: {e}")
+        raise e
+
+def estimate_salary(job_title, skills_list, job_desc):
+    """
+    Estimate compensation range for a role based on job title, extracted skills, and JD context.
+    Returns a dict with salary range, currency, and context notes.
+    """
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY is not set. Please check your .env file.")
+
+    skills_str = ", ".join(skills_list) if skills_list else "general skills"
+
+    prompt = f"""You are a compensation and labor market analyst with access to salary benchmarking data from sources like Levels.fyi, Glassdoor, LinkedIn Salary, and the US Bureau of Labor Statistics.
+
+Estimate a realistic salary compensation range for the following role based on the job title, required skills, and job description context.
+
+Provide breakdowns by:
+- Entry-level / Junior (0-2 years)
+- Mid-level (3-5 years)
+- Senior-level (5+ years)
+
+Also include notes on location variance, remote premium, and any skills that significantly impact compensation.
+
+Return ONLY valid JSON matching this schema:
+{{
+  "currency": "USD",
+  "job_title": "Detected or inferred job title",
+  "entry_level": {{"min": int, "max": int}},
+  "mid_level": {{"min": int, "max": int}},
+  "senior_level": {{"min": int, "max": int}},
+  "high_value_skills": ["skill1", "skill2"],
+  "location_note": "Brief note on how location affects salary (e.g. SF/NYC premium)",
+  "source_note": "Brief note on data basis (e.g. based on market benchmarks from Levels.fyi, Glassdoor, BLS)"
+}}
+
+Job Title: {job_title}
+Key Skills: {skills_str}
+
+Job Description:
+{job_desc}
+"""
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        return json.loads(response.text.strip())
+    except Exception as e:
+        print(f"Error during salary estimation: {e}")
+        raise e
+
+def generate_cold_email(resume_text, job_desc, user_name=""):
+    """
+    Generate a personalized cold email to a recruiter based on resume and JD.
+    Returns the cold email as plain text.
+    """
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY is not set. Please check your .env file.")
+
+    name_hint = f"The candidate's name is {user_name}." if user_name else "Use [Your Name] as a placeholder for the sender's name."
+
+    prompt = f"""You are an expert career coach who specializes in recruiter outreach.
+Write a short, punchy, and highly personalized cold email to a recruiter or hiring manager for the role described in the job description below.
+
+Guidelines:
+- Keep it to 3-4 short paragraphs, under 200 words total
+- Open with a specific, non-generic hook referencing the role/company
+- In 1-2 sentences, reference the candidate's strongest 2-3 skills that match the JD
+- Include a clear, low-friction call to action (e.g. "Happy to share my full resume and portfolio — would a 15-minute chat next week work?")
+- Keep a confident but approachable tone — not desperate, not generic
+- {name_hint}
+- Use [Recruiter Name] as a placeholder for the recipient
+
+Return ONLY the plain text of the cold email. Do not use markdown formatting.
+
+Resume:
+{resume_text}
+
+Job Description:
+{job_desc}
+"""
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error during cold email generation: {e}")
+        raise e

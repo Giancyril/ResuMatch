@@ -1,6 +1,12 @@
 import streamlit as st
 import json
-from gemini_service import analyze_match, generate_cover_letter
+from gemini_service import (
+    analyze_match,
+    generate_cover_letter,
+    optimize_linkedin_profile,
+    estimate_salary,
+    generate_cold_email,
+)
 from scraper import scrape_job_description
 from utils import extract_text_from_pdf
 
@@ -23,6 +29,14 @@ if "url_last_scraped" not in st.session_state:
     st.session_state.url_last_scraped = ""
 if "cover_letter" not in st.session_state:
     st.session_state.cover_letter = ""
+if "linkedin_result" not in st.session_state:
+    st.session_state.linkedin_result = {}
+if "last_rewritten_bullets" not in st.session_state:
+    st.session_state.last_rewritten_bullets = []
+if "salary_result" not in st.session_state:
+    st.session_state.salary_result = {}
+if "cold_email" not in st.session_state:
+    st.session_state.cold_email = ""
 
 # ---------------------------------------------------------------------------
 # Design system: "Document Review Report"
@@ -567,10 +581,13 @@ st.markdown("""
 
 
 # Create workspace tabs
-tab_single, tab_multi, tab_cover = st.tabs([
+tab_single, tab_multi, tab_cover, tab_linkedin, tab_salary, tab_email = st.tabs([
     "Single Resume Review",
     "Multi-Resume Comparison",
-    "Cover Letter Workspace"
+    "Cover Letter Workspace",
+    "LinkedIn Optimizer",
+    "Salary Estimator",
+    "Cold Email Generator",
 ])
 
 # ---------------------------------------------------------------------------
@@ -689,6 +706,9 @@ with tab_single:
                     missing_keywords = analysis.get("missing_keywords", [])
                     rewritten_bullets = analysis.get("rewritten_bullets", [])
                     skill_roadmaps = analysis.get("skill_roadmaps", [])
+                    # Cache for use by other tabs (LinkedIn Optimizer, Salary Estimator, etc.)
+                    st.session_state.last_rewritten_bullets = rewritten_bullets
+
 
                     if score >= 80:
                         stamp_color, verdict = "#1F4D3A", "Strong Match"
